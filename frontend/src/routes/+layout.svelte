@@ -8,4 +8,17 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-{@render children()}
+<div class="layout-frame">
+	{@render children()}
+</div>
+
+<style>
+	:global(body) {
+		margin: 0;
+	}
+
+	.layout-frame {
+		position: relative;
+		min-height: 100vh;
+	}
+</style>
