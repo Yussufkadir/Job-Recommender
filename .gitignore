@@ -4,3 +4,7 @@ datasets/gauravduttakiit
 datasets/someetsingh
 datasets/suriyaganesh
 datasets/wahib04
+datasets/output
+datasets/transformer-models
+datasets/*.spacy
+datasets/*.bin
