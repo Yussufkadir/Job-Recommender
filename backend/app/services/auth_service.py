@@ -26,3 +26,15 @@ def authenticate_user(db: Session, email: str, password: str):
     if not verify_password(password, user.hashed_password):
         return None
     return user
+
+def create_oauth_user(db: Session, email: str, provider: str):
+    db_user = User(
+        email=email,
+        hashed_password=None,
+        is_active=True,
+        provider=provider
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
