@@ -4,6 +4,41 @@
         { name: "GitHub", key: "github", icon: "🐙" }
     ];
     let showPassword = false;
+    let email = "";
+    let password = "";
+    let errorMessage = "";
+
+    async function handleLogin(){
+        errorMessage = "";
+
+        try{
+            const response = await fetch("http://localhost:8000/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json"},
+                body: JSON.stringify({email, password}),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                localStorage.setItem("token", data.access_token);
+                window.location.href = "/main_page";
+            } else {
+                errorMessage = data.detail || "Login Failed";
+            }
+        } catch (error) {
+            console.error({"Error": error});
+            errorMessage = "Could not connect to the server."
+        }
+    }
+
+    function handleSocialLogin(key: string) {
+        if(key === 'gmail') {
+            window.location.href = "http://localhost:8000/auth/google/login";
+        } else if (key === 'github'){
+            window.location.href = "http://localhost:8000/auth/github/login";
+        }
+    }
 </script>
 
 <svelte:head>
@@ -14,13 +49,16 @@
 <section class="login-card">
     <header>
         <h2>Sign in to your account</h2>
+        {#if errorMessage}
+            <p class="error-text">{errorMessage}</p>
+        {/if}
     </header>
 
-    <form class="input-grid">
+    <form class="input-grid" on:submit|preventDefault={handleLogin}>
         <label>
             Email
             <div class="input-wrap">
-                <input class="text-input" type="text" placeholder="Email" />
+                <input class="text-input" type="text" placeholder="Email" bind:value={email} required/>
             </div>
         </label>
         <label>
@@ -28,7 +66,9 @@
             <div class="input-wrap">
                 <input class="text-input"
                 type={showPassword ? "text" : "password"} 
-                placeholder="*******" />
+                placeholder="*******" 
+                bind:value={password}
+                required/>
                 <button 
                 type="button" 
                 class="toggle-visibility" 
@@ -40,14 +80,14 @@
     </form>
 
     <div class="actions">
-        <button type="button" class="primary-action">Log in</button>
+        <button type="submit" class="primary-action">Log in</button>
     </div>
 
     <div class="social-login">
         <p>Or continue with</p>
         <div class="social-buttons">
             {#each authProviders as provider}
-                <button type="button" class={`social-button ${provider.key}`}>
+                <button type="button" class={`social-button ${provider.key}`} onclick={() => handleSocialLogin(provider.key)}>
                     <span aria-hidden="true">{provider.icon}</span>
                     {provider.name}
                 </button>
@@ -83,6 +123,13 @@
     .login-card h2 {
         margin: 0;
         font-size: 1.5rem;
+    }
+
+    .error-text {
+        color: #ef4444;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        text-align: center;
     }
 
     .input-grid {
