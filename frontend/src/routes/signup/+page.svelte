@@ -1,9 +1,50 @@
 <script lang="ts">
+
     const authProviders = [
         { name: "Gmail", key: "gmail", icon: "✉️" },
         { name: "GitHub", key: "github", icon: "🐙" }
     ];
     let showPassword = false;
+    let email = ""
+    let password = ""
+    let repeatPassword = ""
+    let errorMessage = ""
+
+    async function handleAccountCreate() {
+        errorMessage = ""
+
+        if (password != repeatPassword) {
+            errorMessage = "Passwords do not match !";
+            return
+        }
+
+        try{
+            const response = await fetch("http://localhost:8000/auth/signup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                window.location.href = "/login";
+            } else {
+                errorMessage = data.detail || "Signup failed";
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            errorMessage = "Could not connect to server.";
+        }
+    }
+
+    function handleSocialLogin(key: string){
+        if (key === 'gmail') {
+            window.location.href = "http://localhost:8000/auth/google/login";
+        } else if (key === 'github'){
+            window.location.href = "http://localhost:8000/auth/github/login"
+        }
+    }
 </script>
 
 <svelte:head>
@@ -16,11 +57,11 @@
         <h2>Please sign up to the platform</h2>
     </header>
 
-    <form class="signup-grid">
+    <form class="signup-grid" on:submit|preventDefault={handleAccountCreate}>
         <label>
             Email
             <div class="input-wrap">
-                <input class="text-input" type="text" placeholder="Email" />
+                <input class="text-input" type="text" placeholder="Email" bind:value={email} required/>
             </div>
         </label>
         <label>
@@ -28,7 +69,10 @@
             <div class="input-wrap">
                 <input class="text-input"
                 type={showPassword ? "text" : "password"} 
-                placeholder="*******" />
+                placeholder="*******"
+                bind:value={password}
+                required
+                />
                 <button 
                 type="button" 
                 class="toggle-visibility" 
@@ -42,7 +86,9 @@
             <div class="input-wrap">
                 <input class="text-input"
                 type={showPassword ? "text" : "password"} 
-                placeholder="*******" />
+                placeholder="*******" 
+                bind:value={repeatPassword}
+                required/>
                 <button 
                 type="button" 
                 class="toggle-visibility" 
@@ -51,17 +97,21 @@
                 </button>
             </div>
         </label>
+        <div class="actions">
+            <button type="submit" class="primary-action">Sign up</button>
+        </div>
     </form>
 
-    <div class="actions">
-        <button type="button" class="primary-action">Log in</button>
+
+    <div style="text-align: centerl margin-top: 1rem;">
+        <a href="/login" style="color: #a5b4fc; text-decoration: none; font-size: 0.9rem;">Already have an account? Log in</a>
     </div>
 
     <div class="social-login">
         <p>Or continue with</p>
         <div class="social-buttons">
             {#each authProviders as provider}
-                <button type="button" class={`social-button ${provider.key}`}>
+                <button type="button" class={`social-button ${provider.key}`} on:click={() => handleSocialLogin(provider.key)}>
                     <span aria-hidden="true">{provider.icon}</span>
                     {provider.name}
                 </button>
@@ -97,6 +147,13 @@
     .signup-card h2 {
         margin: 0;
         font-size: 1.5rem;
+    }
+
+    .error-text {
+        color: #ef4444;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        text-align: center;
     }
 
     .input-grid {
