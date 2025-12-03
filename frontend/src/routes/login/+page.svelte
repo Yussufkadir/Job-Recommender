@@ -77,17 +77,15 @@
                 </button>
             </div>
         </label>
+        <div class="actions">
+            <button type="submit" class="primary-action">Log in</button>
+        </div>
     </form>
-
-    <div class="actions">
-        <button type="submit" class="primary-action">Log in</button>
-    </div>
-
     <div class="social-login">
         <p>Or continue with</p>
         <div class="social-buttons">
             {#each authProviders as provider}
-                <button type="button" class={`social-button ${provider.key}`} onclick={() => handleSocialLogin(provider.key)}>
+                <button type="button" class={`social-button ${provider.key}`} on:click={() => handleSocialLogin(provider.key)}>
                     <span aria-hidden="true">{provider.icon}</span>
                     {provider.name}
                 </button>
