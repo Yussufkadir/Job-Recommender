@@ -1,0 +1,80 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from deep_translator import GoogleTranslator
+import time 
+
+class NoFluffScrapper:
+    def __init__(self):
+        self.options = Options()
+        self.options.add_argument("--headless")
+        self.options.add_argument("--window-size=1920,1080")
+        self.options.add_argument("--log-level=3")
+
+    def find_jobs(self, query, limit=5):
+        driver = webdriver.Chrome(options=self.options)
+        jobs_data = []
+
+        print(f"Scrapper searching for {query}...")
+
+        try:
+            url = f"https://nofluffjobs.com/pl/jobs?criteria=keyword%3D'{query}'"
+            driver.get(url)
+            wait = WebDriverWait(driver,10)
+
+            try:
+                accept_btn = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "a.posting-list-item")))
+                accept_btn.click()
+            except:
+                pass
+
+            try:
+                cards = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "a.posting-list-item")))
+                links = [cards.get_attribute("href") for card in cards[:limit]]
+            except:
+                print("No jobs are found by the scrapper")
+                return []
+            
+            translator = GoogleTranslator(source="auto", target="en")
+
+            for link in links:
+                try:
+                    driver.get(link)
+                    time.sleep(0.5)
+
+                    title = driver.find_element(By.TAG_NAME, "h1").text.strip()
+
+                    try:
+                        company = driver.find_element(By.CSS_SELECTOR, "a.inline-block").text.strip()
+                    except:
+                        company = "Unknow Company"
+
+                    try:
+                        content = driver.find_element(By.CSS_SELECTOR, "article").text
+                    except:
+                        content = driver.find_element(By.ID, "posting-description").text
+                    
+                    try:
+                        content_en = translator.translate(content[:4999])
+                    except:
+                        content_en = content
+
+                    jobs_data.append({
+                        "title": title,
+                        "company": company,
+                        "location": "Poland",
+                        "description": content_en,
+                        "link": link,
+                        "source": "NoFluffJobs"
+                    })
+                    print(f"Scrapped the job: {title}")
+
+                except:
+                    continue
+                
+        finally:
+            driver.quit()
+        
+        return jobs_data
