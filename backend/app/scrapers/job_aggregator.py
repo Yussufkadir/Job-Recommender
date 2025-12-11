@@ -26,4 +26,4 @@ class JobAggregator():
 if __name__=="__main__":
     jobs = JobAggregator()
     things = jobs.get_all_jobs(query="AI engineer")
-    print(things.head())
+    things.to_csv("jobs.csv")

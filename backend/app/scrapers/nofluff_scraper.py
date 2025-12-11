@@ -25,14 +25,14 @@ class NoFluffScrapper:
             wait = WebDriverWait(driver,10)
 
             try:
-                accept_btn = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "a.posting-list-item")))
+                accept_btn = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "onetrust-accept-btn-handler")))
                 accept_btn.click()
             except:
                 pass
 
             try:
                 cards = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "a.posting-list-item")))
-                links = [cards.get_attribute("href") for card in cards[:limit]]
+                links = [card.get_attribute("href") for card in cards[:limit]]
             except:
                 print("No jobs are found by the scrapper")
                 return []
