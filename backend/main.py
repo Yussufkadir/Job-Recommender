@@ -21,15 +21,15 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://localhost:5173"],
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
 )
 
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
-app.include_router(cv_tailor.router, prefix="api/cv", tags=["CV Tailoring"])
-app.include_router(jobs.router, prefix="api/jobs", tags=["Jobs"])
+app.include_router(cv_tailor.router, prefix="/api/cv", tags=["CV Tailoring"])
+app.include_router(jobs.router, prefix="/api/jobs", tags=["Jobs"])
 app.include_router(analytics.router, prefix="/graph", tags=["Knowledge Graph"])
 
 @app.get("/")
