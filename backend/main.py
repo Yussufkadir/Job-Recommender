@@ -28,8 +28,8 @@ app.add_middleware(
 )
 
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
-app.include_router(cv_tailor.router, prefix="/cv", tags=["CV Tailoring"])
-app.include_router(jobs.router, prefix="/jobs", tags=["Job scrapper"])
+app.include_router(cv_tailor.router, prefix="api/cv", tags=["CV Tailoring"])
+app.include_router(jobs.router, prefix="api/jobs", tags=["Jobs"])
 app.include_router(analytics.router, prefix="/graph", tags=["Knowledge Graph"])
 
 @app.get("/")
