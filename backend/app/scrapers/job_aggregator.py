@@ -1,4 +1,7 @@
 import pandas as pd
+import sys
+import os
+
 from adzuna_job_finder import AdzunaJobFinder
 from nofluff_scraper import NoFluffScrapper
 

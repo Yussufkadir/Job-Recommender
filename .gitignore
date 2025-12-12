@@ -5,6 +5,6 @@ datasets/someetsingh
 datasets/suriyaganesh
 datasets/wahib04
 datasets/output
-datasets/transformer-models
+ml_services/recommender_service/transformer-models
 datasets/*.spacy
 datasets/*.bin
