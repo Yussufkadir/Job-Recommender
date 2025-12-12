@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { goto } from '$app/navigation';
 
     const authProviders = [
         { name: "Gmail", key: "gmail", icon: "✉️" },
@@ -9,6 +10,7 @@
     let password = ""
     let repeatPassword = ""
     let errorMessage = ""
+    let loading = false;
 
     async function handleAccountCreate() {
         errorMessage = ""
@@ -18,23 +20,42 @@
             return
         }
 
+        loading = true;
+
         try{
-            const response = await fetch("http://localhost:8000/auth/signup", {
+            const signupRes = await fetch("http://localhost:8000/auth/signup", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password })
             });
 
-            const data = await response.json();
+            const signupData = await signupRes.json();
 
-            if (response.ok) {
-                window.location.href = "/login";
+            if (!signupRes.ok) {
+                errorMessage = signupData.detail || "Signup failed";
+                loading = false;
+                return
+            } 
+
+            const loginRes = await fetch("http://localhost:8000/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (loginRes.ok){
+                const loginData = await loginRes.json();
+                localStorage.setItem("token", loginData.access_token);
+                goto("/main_page")
             } else {
-                errorMessage = data.detail || "Signup failed";
+                goto("/login")
             }
+
         } catch (error) {
             console.error("Error:", error);
             errorMessage = "Could not connect to server.";
+        } finally {
+            loading = false;
         }
     }
 
