@@ -19,8 +19,8 @@
         const skillsArray = skillsInput.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
         try{
-            const response = await getRecommendations(cvText, skillsArrays);
-            jobs = respnose.jobs;
+            const response = await getRecommendations(cvText, skillsArray);
+            jobs = response.jobs;
         } catch (err) {
             console.error(err);
             error = "Failed to fetch jobs. Check the backend."
@@ -81,8 +81,8 @@
                 <div class="job-card">
                     <div class="job-header">
                         <h3>{job.title}</h3>
-                        <span class="score-badge" style="background: {job.match_score > 70 ? '#10b981' : '#f59e0b'}">
-                            {job.match_score}% Match
+                        <span class="score-badge" style="background: {job.score > 70 ? '#10b981' : '#f59e0b'}">
+                            {job.score}% Match
                         </span>
                     </div>
                     <p class="company">{job.company} * {job.location}</p>
@@ -104,14 +104,6 @@
 </div>
 
 <style>
-    :global(body) {
-        font-family: "Inter", "sans-herif";
-        margin: 0;
-        background: #0f172a;
-        background: radial-gradient(circle at top, #1e293b 0%, #020617 100%);
-        color: #f8fafc;
-    }
-
     .page-container {
         display: flex;
         min-height: 100vh;

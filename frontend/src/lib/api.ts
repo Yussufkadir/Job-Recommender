@@ -11,7 +11,7 @@ export interface Job {
 }
 
 export interface RecommendationResponse{
-    job: Job[];
+    jobs: Job[];
     message?: string;
 }
 
