@@ -13,9 +13,12 @@
 </div>
 
 <style>
-	:global(body) {
-		margin: 0;
-	}
+    :global(body){
+        font-family: "Inter", "sans-serif";
+        margin: 0;
+        background: #0f172a;
+        color: #f8fafc;
+    }
 
 	.layout-frame {
 		position: relative;

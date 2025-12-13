@@ -118,13 +118,18 @@
                 </button>
             </div>
         </label>
+
+        {#if errorMessage}
+            <p class="error-text">{errorMessage}</p>
+        {/if}
+
         <div class="actions">
             <button type="submit" class="primary-action">Sign up</button>
         </div>
     </form>
 
 
-    <div style="text-align: centerl margin-top: 1rem;">
+    <div style="text-align: center; margin-top: 1rem;">
         <a href="/login" style="color: #a5b4fc; text-decoration: none; font-size: 0.9rem;">Already have an account? Log in</a>
     </div>
 
@@ -143,6 +148,7 @@
 </section>
 
 <style>
+
     .page-shell {
         min-height: 100vh;
         display: flex;
