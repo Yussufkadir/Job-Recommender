@@ -15,6 +15,11 @@
 </div>
 
 <style>
+  :global(html){
+    scrollbar-gutter: stable;
+    overflow-y: scroll;
+  }
+
   .home-shell {
     position: relative;
     min-height: 100vh;
@@ -27,7 +32,10 @@
     right: 2rem;
     display: flex;
     gap: 1rem; 
-    z-index: 100; 
+    z-index: 100;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform;
   }
 
   .cta-button {
@@ -41,7 +49,7 @@
   }
 
   .cta-button:hover {
-    transform: translateY(-2px);
+    /*transform: translateY(-2px); */
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
   }
 

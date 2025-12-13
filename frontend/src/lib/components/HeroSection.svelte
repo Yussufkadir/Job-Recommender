@@ -44,6 +44,7 @@
     margin: 0;
     background: radial-gradient(circle at top, #101828 0%, #05060a 60%);
     color: #f8fafc;
+    scrollbar-gutter: stable;
   }
 
   .hero {
