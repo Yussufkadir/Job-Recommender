@@ -7,7 +7,7 @@ export interface Job {
     description: string;
     link: string;
     source: string;
-    score: number;
+    match_score: number;
 }
 
 export interface RecommendationResponse{
