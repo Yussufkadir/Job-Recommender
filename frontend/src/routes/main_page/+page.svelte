@@ -1,13 +1,55 @@
 <script lang="ts">
     import { getRecommendations, type Job } from '$lib/api'
+
     let cvText = "";
     let skillsInput = "";
-    let jobs: Job[] = [];
+    let jobs: Job [] = [];
     let loading = false;
     let error = "";
+    let cvFile: File | null = null;
+    let tailoringJobId: string | null = null;
+    let tailoredResults: Record<string, string> = {};
+
+    async function handleFileSelect(event: Event) {
+        const target = event.target as HTMLInputElement;
+        if (target.files && target.files.length > 0) {
+            cvFile = target.files[0];
+
+            const formData = new FormData();
+            formData.append("file", cvFile);
+
+            cvText = "Extracting text from file...";
+            skillsInput = "Extracting..."
+
+            try {
+                const res = await fetch("http://localhost:8000/api/parse_cv", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    cvText = data.text;
+
+                    if (data.skills && data.skills.length > 0) {
+                        skillsInput = data.skills.join(", ");
+                    } else {
+                        skillsInput = "";
+                    }
+                } else {
+                    cvText = "";
+                    alert("failed to read file text.");
+                }
+            } catch (e) {
+                console.error(e);
+                cvText = "";
+                alert("Error parsing file.")
+            }
+        }
+    }
 
     async function handleSearch() {
-        if (!cvText || !skillsInput) {
+        if (!cvText && !skillsInput) {
             error = "Please fill in both CV content and Skills.";
             return;
         }
@@ -28,6 +70,39 @@
             loading = false;
         }
     }
+
+    async function handleTailorCV(job: Job){
+        if (!cvFile){
+            alert("Please upload a CV file (PDF/DOCX) in the top section first.")
+            return;
+        }
+
+        tailoringJobId = job.title;
+
+        try {
+            const formData = new FormData();
+            formData.append("file", cvFile);
+            formData.append("job_description", job.description);
+
+            const res = await fetch("http://localhost:8000/api/cv_tailor", {
+                method: "POST",
+                body: formData
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                tailoredResults[job.title] = data.tailored_cv;
+            } else {
+                const err = await res.json();
+                alert("tailoring of CV is failed: " + (err.detail || "Unknown error"));
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error connecting to the server.");
+        } finally {
+            tailoringJobId = null;
+        }
+    }
 </script>
 <svelte:head>
     <title>Main Page</title>
@@ -40,12 +115,29 @@
             <p class="subtitle">Upload your CV and skills to find the jobs that fit you.</p>
 
             <div class="form-group">
-                <label for="cv">CV Content</label>
+                <label for="cv-upload">Upload CV (PDF/DOCX)</label>
+                <div class="file-upload-wrapper">
+                    <input
+                    id="cv-upload"
+                    type="file"
+                    accept=".pdf,.docx"
+                    on:change={handleFileSelect}
+                    class="file-input"
+                    />
+                    <div class="file-display">
+                        <span class="icon">📄</span>
+                        <span class="filename">{cvFile ? cvFile.name : "Choose a file..."}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="cv">CV Content (for search)</label>
                 <textarea
                     id="cv"
                     bind:value={cvText}
                     placeholder="Paste your CV text here..."
-                    rows="8"
+                    rows="4"
                 ></textarea>
             </div>
 
@@ -81,8 +173,8 @@
                 <div class="job-card">
                     <div class="job-header">
                         <h3>{job.title}</h3>
-                        <span class="score-badge" style="background: {job.score > 70 ? '#10b981' : '#f59e0b'}">
-                            {job.score}% Match
+                        <span class="score-badge" style="background: {job.match_score > 70 ? '#10b981' : '#f59e0b'}">
+                            {job.match_score}% Match
                         </span>
                     </div>
                     <p class="company">{job.company} * {job.location}</p>
@@ -90,8 +182,22 @@
 
                     <div class="actions">
                         <a href={job.link} target="_blank" class="apply-link">View Job</a>
-                        <button class="tailor-btn">Tailor CV</button>
+                        <button 
+                        class="tailor-btn"
+                        on:click={() => handleTailorCV(job)}
+                        disabled={tailoringJobId === job.title}
+                        >
+                        {tailoringJobId === job.title ? "Processing..." : "Tailor CV"}
+                    </button>
                     </div>
+                    {#if tailoredResults[job.title]}
+                    <div class="tailored-result">
+                        <h4>AI Suggestions</h4>
+                        <div class="markdown-content">
+                            {@html tailoredResults[job.title].replace(/\n/g, '<br>')}
+                        </div>
+                    </div>
+                    {/if}
                 </div>
             {/each}
         </div>
@@ -151,6 +257,40 @@
         font-weight: 500;
         color: #cbd5e1;
     }
+
+    .file-upload-wrapper {
+        position: relative;
+        overflow: hidden;
+        border: 2px dashed #475569;
+        border-radius: 8px;
+        transition: border-color 0.2s;
+        background: rgba(0,0,0,0.2);
+    }
+
+    .file-upload-wrapper:hover {
+        border-color: #6366f1;
+        background: rgba(99, 102, 241, 0.1);
+    }
+
+    .file-input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .file-display {
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #cbd5e1;
+        justify-content: center;
+    }
+    .icon { font-size: 1.2rem; }
 
     textarea, input {
         width: 100%;

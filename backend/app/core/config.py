@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     GITHUB_CLIENT_ID: Optional[str] = None
     GITHUB_CLIENT_SECRET: Optional[str] = None
 
-    class config:
+    class Config:
         env_file = ".env"
 
 settings = Settings()
