@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 import os
 from dotenv import load_dotenv
+from deep_translator import GoogleTranslator
 
 load_dotenv()
 
@@ -10,10 +11,11 @@ class AdzunaJobFinder():
         self.app_id = os.getenv("ADZUNA_APPLICATION_ID")
         self.app_key = os.getenv("ADZUNA_APPLICATION_KEY")
         self.country = country 
+        self.translator = GoogleTranslator(source='auto', target='en')
 
         self.base_url = f"https://api.adzuna.com/v1/api/jobs/{country}/search/1"
 
-        if not self.app_id or self.app_key:
+        if not self.app_id or not self.app_key:
             print("Adzuna API keys did not found")
 
     def find_jobs(self, query="python", result_per_page=20):
@@ -36,20 +38,30 @@ class AdzunaJobFinder():
                 print("Adzuna Error: 401 Unauthorized (Check API keys)")
                 return pd.DataFrame()
             if response.status_code == 429:
-                print("Limit reach good old api days are over")
+                print("Limit reached")
 
             response.raise_for_status()
             data = response.json()
 
             jobs = []
+            
 
             for item in data.get('results', []):
+                raw_description = item.get("description", "")
+                final_description = raw_description
+
+                if raw_description:
+                    try:
+                        final_description = self.translator.translate(raw_description[:4999])
+                    except Exception as trans_error:
+                        print(f"Traslation failed with error: {e}")
+
                 jobs.append({
                     "title": item.get("title"),
                     "company": item.get("company", {}).get("display_name"),
                     "location": item.get("location", {}).get("display_name"),
-                    "description": item.get("description"),
-                    "link": item.get("base_url"),
+                    "description": final_description,
+                    "link": item.get("redirect_url"),
                     "source": "Adzuna API"
                 })
 

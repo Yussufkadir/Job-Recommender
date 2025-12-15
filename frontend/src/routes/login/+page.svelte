@@ -55,14 +55,14 @@
     </header>
 
     <form class="input-grid" on:submit|preventDefault={handleLogin}>
-        <label>
-            Email
+            <label>
+                <span class="label-text">Email</span>
             <div class="input-wrap">
                 <input class="text-input" type="text" placeholder="Email" bind:value={email} required/>
             </div>
         </label>
         <label>
-            Password
+            <span class="label-text">Password</span>
             <div class="input-wrap">
                 <input class="text-input"
                 type={showPassword ? "text" : "password"} 
@@ -121,6 +121,7 @@
     .login-card h2 {
         margin: 0;
         font-size: 1.5rem;
+        text-align: center;
     }
 
     .error-text {
@@ -192,12 +193,18 @@
         border: none;
         border-radius: 999px;
         padding: 0.8rem 1.6rem;
-        font-weight: 600;
+        font-weight: 800;
         cursor: pointer;
         background: linear-gradient(120deg, #6366f1, #a855f7);
         color: #e0e7ff;
         min-width: 180px;
         text-align: center;
+        font-size: 0.9rem;
+    }
+
+    .label-text {
+        margin-left: 0.5rem;
+        font-weight: 500;
     }
 
     .social-login {

@@ -28,7 +28,19 @@ class JobAggregator():
         nofluff_jobs = self.nofluff.find_jobs(query, limit=5)
         all_jobs.extend(nofluff_jobs)
 
-        return pd.DataFrame(all_jobs)
+        df =  pd.DataFrame(all_jobs)
+
+        if df.empty:
+            return df
+        
+        df['decoy_title'] = df['title'].str.lower().str.strip()
+        df['decoy_comp'] = df['company'].str.lower().str.strip()
+
+        df = df.drop_duplicates(subset=['decoy_title', 'decoy_comp'], keep='first')
+
+        df = df.drop(columns=['decoy_title', 'decoy_comp'])
+
+        return df
 
 if __name__=="__main__":
     jobs = JobAggregator()
