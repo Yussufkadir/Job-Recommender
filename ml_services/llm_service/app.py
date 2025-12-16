@@ -16,15 +16,13 @@ class TailorRequest(BaseModel):
     cv_text: str
     job_description: str
 
-@app.post("/tailor")
+@app.post("/cv_tailor")
 def tailor_cv(req: TailorRequest):
     if not pipe: raise HTTPException(500, "model loading")
-
     messages = [
-        {"role": "system", "content": "You are a advisor who tailors CV's according to the job requirements. Rewrite the user's ENTIRE CV to match the Job Description precisely. Make sure to fit it into one page. Make sure to keep its same with the user's structure"},
-        {"role": "user", "content": f"Job: {req.job_description}\nCV: {req.cv_text}\n\nGENERATE TAILORED CV:"}
+        {"role": "system", "content": "You are a professional CV writer. Rewrite the input CV to align with the provided Job Description. OUTPUT RULES: 1. Return ONLY the content of the CV. 2. Do NOT include any introductory or concluding remarks (e.g., 'Here is the tailored CV'). 3. Do NOT include 'AI Suggestions' or reasoning. 4. Maintain the original structure of the CV. 5. Do not consider job description at all only for reference."},
+        {"role": "user", "content": f"### Job Description:\n{req.job_description}\n\n### Original CV:\n{req.cv_text}\n\n### Task:\nRewrite the above CV to match the Job Description and only look at the cv content and do not consider job description at all. Output ONLY the tailored CV."}
     ]
-
     outputs = pipe(messages, max_new_tokens=1500, do_sample=True, temperature=0.7)
     generated_output = outputs[0]['generated_text'][-1]['content']
     return {"tailored_cv": generated_output}
