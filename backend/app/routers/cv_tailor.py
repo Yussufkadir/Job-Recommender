@@ -5,10 +5,10 @@ import httpx
 
 router = APIRouter()
 
-LLM_SERVICE_URL = "http://localhost:8002/tailor"
+LLM_SERVICE_URL = "http://127.0.0.1:8002/cv_tailor"
 
 async def generate_tailored_cv(cv_text: str, job_description: str) -> str:
-    async with httpx.AsyncClient(timeout=120.0) as client:
+    async with httpx.AsyncClient(timeout=360.0) as client:
         try:
             payload = {
                 "cv_text": cv_text,
