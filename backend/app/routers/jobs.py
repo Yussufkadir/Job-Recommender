@@ -36,8 +36,9 @@ async def recommend_jobs(request: JobSearchRequest):
             user_skills=request.skills,
             job_description=job.get('description', '')
         )
-        job['match_score'] = score
-        scored_jobs.append(job)
+        if score > 70:
+            job['match_score'] = score
+            scored_jobs.append(job)
 
     scored_jobs.sort(key=lambda x: x['match_score'], reverse=True)
     
