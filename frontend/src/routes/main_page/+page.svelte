@@ -103,6 +103,42 @@
             tailoringJobId = null;
         }
     }
+
+    async function downloadPDF(text: string){
+        try{
+            const res = await fetch("http://localhost:8000/api/download_pdf", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: text })
+            });
+
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "Tailored_CV.pdf";
+                document.body.appendChild(a);
+                a.click();
+
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } else {
+                alert("Failed to generate PDF");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error downloading PDF");
+        }
+    }
+
+    function formatMarkdown(text: string) {
+        if (!text) return "";
+        return text
+            .replace(/\n/g, '<br>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/- (.*?)(<br>|$)/g, '• $1$2'); 
+    }
 </script>
 <svelte:head>
     <title>Main Page</title>
@@ -191,12 +227,21 @@
                     </button>
                     </div>
                     {#if tailoredResults[job.title]}
-                    <div class="tailored-result">
-                        <h4>AI Suggestions</h4>
-                        <div class="markdown-content">
-                            {@html tailoredResults[job.title].replace(/\n/g, '<br>')}
+                        <div class="tailored-result">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                <h4>AI Suggestions</h4>
+                                <button 
+                                    class="download-btn" 
+                                    on:click={() => downloadPDF(tailoredResults[job.title])}
+                                    style="background:#10b981; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;"
+                                >
+                                    📥 Download PDF
+                                </button>
+                            </div>
+                            <div class="markdown-content">
+                                {@html formatMarkdown(tailoredResults[job.title])}
+                            </div>
                         </div>
-                    </div>
                     {/if}
                 </div>
             {/each}
