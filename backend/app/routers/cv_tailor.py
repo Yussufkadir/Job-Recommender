@@ -1,11 +1,27 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
 from ..services.file_processor import extract_text_from_file
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+from ..services.pdf_generator import generate_pdf_from_tailoring
 import os
 import httpx
 
 router = APIRouter()
 
 LLM_SERVICE_URL = "http://127.0.0.1:8002/cv_tailor"
+
+class PDFRequest(BaseModel):
+    text: str
+
+@router.post("/download_pdf")
+async def download_tailored_cv(req: PDFRequest):
+    pdf_buffer = generate_pdf_from_tailoring(req.text)
+
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=Tailored_CV.pdf"}
+    )
 
 async def generate_tailored_cv(cv_text: str, job_description: str) -> str:
     async with httpx.AsyncClient(timeout=360.0) as client:
