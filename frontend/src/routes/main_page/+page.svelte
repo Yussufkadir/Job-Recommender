@@ -3,6 +3,7 @@
 
     let cvText = "";
     let skillsInput = "";
+    let seniorityLevel = "All";
     let jobs: Job [] = [];
     let loading = false;
     let error = "";
@@ -61,7 +62,7 @@
         const skillsArray = skillsInput.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
         try{
-            const response = await getRecommendations(cvText, skillsArray);
+            const response = await getRecommendations(cvText, skillsArray, seniorityLevel);
             jobs = response.jobs;
         } catch (err) {
             console.error(err);
@@ -185,6 +186,17 @@
                     bind:value={skillsInput}
                     placeholder="e.g. Python, React, SQL"
                 />
+            </div>
+
+            <div class="form-group">
+                <label for="seniority">Seniority Level</label>
+                <select id="seniority" bind:value={seniorityLevel}>
+                    <option value="All">All Levels</option>
+                    <option value="Intern">Intern/Trainee</option>
+                    <option value="Junior">Junior</option>
+                    <option value="Mid">Mid</option>
+                    <option value="Seniority">Senior</option>
+                </select>
             </div>
 
             {#if error}
@@ -351,6 +363,28 @@
     textarea:focus, input:focus {
         outline: 2px solid #6366f1;
         border-color: transparent;
+    }
+
+    select {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 0.75rem;
+        color: white;
+        font-family: inherit;
+        box-sizing: border-box;
+        cursor: pointer;
+    }
+
+    select:focus {
+        outline: 2px solid #6366f1;
+        border-color: transparent;
+    }
+
+    option {
+        background-color: #1e293b;
+        color: white;
     }
 
     .search-btn {
