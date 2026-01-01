@@ -16,10 +16,10 @@ class JobAggregator():
         self.nofluff = NoFluffScrapper()
         self.scorer_url = "http://localhost:8001/score"
 
-    def get_all_jobs(self, query):
+    def get_all_jobs(self, query, user_skills=None, seniority=None):
         all_jobs = []
 
-        df_adzuna = self.adzuna.find_jobs(query)
+        df_adzuna = self.adzuna.find_jobs(query, seniority=seniority)
 
         if not df_adzuna.empty:
 
@@ -27,7 +27,7 @@ class JobAggregator():
             all_jobs.extend(adzuna_list)
 
         
-        nofluff_jobs = self.nofluff.find_jobs(query, limit=5)
+        nofluff_jobs = self.nofluff.find_jobs(query, limit=5, seniority=seniority)
         all_jobs.extend(nofluff_jobs)
 
         df =  pd.DataFrame(all_jobs)

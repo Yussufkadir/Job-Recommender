@@ -18,16 +18,20 @@ class AdzunaJobFinder():
         if not self.app_id or not self.app_key:
             print("Adzuna API keys did not found")
 
-    def find_jobs(self, query="python", result_per_page=20):
+    def find_jobs(self, query, result_per_page=20, seniority=None):
+        final_query = query
+        if seniority and seniority.lower() != "all":
+            final_query = f"{query} {seniority}"
+
         params = {
             "app_id": self.app_id,
             "app_key": self.app_key,
             "results_per_page": result_per_page,
-            "what": query,
+            "what": final_query,
             "content-type": "application/json"
         }
 
-        print(f"Search engine searching for {query} in {self.country}")
+        print(f"Search engine searching for {final_query} in {self.country}")
 
         try:
             response = requests.get(self.base_url, params=params)
@@ -45,7 +49,6 @@ class AdzunaJobFinder():
 
             jobs = []
             
-
             for item in data.get('results', []):
                 raw_description = item.get("description", "")
                 final_description = raw_description
@@ -54,7 +57,7 @@ class AdzunaJobFinder():
                     try:
                         final_description = self.translator.translate(raw_description[:4999])
                     except Exception as trans_error:
-                        print(f"Traslation failed with error: {e}")
+                        print(f"Traslation failed with error: {trans_error}")
 
                 jobs.append({
                     "title": item.get("title"),
