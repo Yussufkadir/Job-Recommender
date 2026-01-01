@@ -9,8 +9,9 @@ router = APIRouter()
 
 class JobSearchRequest(BaseModel):
     cv_text: str
-    skills: List[str]
+    skills: Optional[List[str]] = None
     location: Optional[str] = "Poland"
+    seniority = Optional[str] = "All"
 
 @router.post("/recommend")
 async def recommend_jobs(request: JobSearchRequest):
@@ -20,7 +21,11 @@ async def recommend_jobs(request: JobSearchRequest):
     query = request.skills[0] if request.skills else "Software Engineer"
 
     aggregator = JobAggregator()
-    jobs_df = aggregator.get_all_jobs(query)
+    jobs_df = aggregator.get_all_jobs(
+        query=query,
+        user_skills=request.skills,
+        seniority=request.seniority
+        )
 
     if jobs_df.empty:
         return {"message": "No jobs found", "jobs": []}

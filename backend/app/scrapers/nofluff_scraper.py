@@ -13,14 +13,18 @@ class NoFluffScrapper:
         self.options.add_argument("--window-size=1920,1080")
         self.options.add_argument("--log-level=3")
 
-    def find_jobs(self, query, limit=5):
+    def find_jobs(self, query, limit=5, seniority=None):
+        final_query = query
+        if seniority and seniority.lower != "all":
+            final_query = f"{query} {seniority}"
+        
         driver = webdriver.Chrome(options=self.options)
         jobs_data = []
 
-        print(f"Scrapper searching for {query}...")
+        print(f"Scrapper searching for {final_query}...")
 
         try:
-            url = f"https://nofluffjobs.com/pl/jobs?criteria=keyword%3D'{query}'"
+            url = f"https://nofluffjobs.com/pl/jobs?criteria=keyword%3D'{final_query}'"
             driver.get(url)
             wait = WebDriverWait(driver,10)
 
