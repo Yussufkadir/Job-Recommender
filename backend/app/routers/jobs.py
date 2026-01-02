@@ -11,15 +11,16 @@ class JobSearchRequest(BaseModel):
     cv_text: str
     skills: Optional[List[str]] = None
     location: Optional[str] = "Poland"
-    seniority = Optional[str] = "All"
+    seniority: Optional[str] = "All"
+    query: Optional[str] = "Software Engineer"
 
 @router.post("/recommend")
 async def recommend_jobs(request: JobSearchRequest):
 
     print(f"Recieved search request for skills {request.skills}")
 
-    query = request.skills[0] if request.skills else "Software Engineer"
-
+    query = request.query
+    
     aggregator = JobAggregator()
     jobs_df = aggregator.get_all_jobs(
         query=query,

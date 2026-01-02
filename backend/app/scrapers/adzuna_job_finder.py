@@ -21,7 +21,7 @@ class AdzunaJobFinder():
     def find_jobs(self, query, result_per_page=20, seniority=None):
         final_query = query
         if seniority and seniority.lower() != "all":
-            final_query = f"{query} {seniority}"
+            final_query = f"{seniority} {query}"
 
         params = {
             "app_id": self.app_id,
