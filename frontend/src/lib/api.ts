@@ -15,11 +15,11 @@ export interface RecommendationResponse{
     message?: string;
 }
 
-export async function getRecommendations(cvText: string, skills: string[], seniority: string = "All"): Promise<RecommendationResponse> {
+export async function getRecommendations(cvText: string, query: string, skills: string[], seniority: string = "All"): Promise<RecommendationResponse> {
     const res = await fetch(`${API_URL}/jobs/recommend`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cv_text: cvText, skills: skills, seniority: seniority})
+        body: JSON.stringify({ cv_text: cvText, query: query, skills: skills, seniority: seniority})
     });
 
     if (!res.ok){

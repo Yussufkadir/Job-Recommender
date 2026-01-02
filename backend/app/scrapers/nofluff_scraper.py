@@ -15,8 +15,8 @@ class NoFluffScrapper:
 
     def find_jobs(self, query, limit=5, seniority=None):
         final_query = query
-        if seniority and seniority.lower != "all":
-            final_query = f"{query} {seniority}"
+        if seniority and seniority.lower() != "all":
+            final_query = f"{seniority} {query}"
         
         driver = webdriver.Chrome(options=self.options)
         jobs_data = []

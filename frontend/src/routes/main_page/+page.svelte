@@ -4,6 +4,7 @@
     let cvText = "";
     let skillsInput = "";
     let seniorityLevel = "All";
+    let query = "";
     let jobs: Job [] = [];
     let loading = false;
     let error = "";
@@ -55,6 +56,11 @@
             return;
         }
 
+        if (!query) {
+            error = "Please enter a job title to find a relevant job.";
+            return
+        }
+
         loading = true;
         error = "";
         jobs = [];
@@ -62,7 +68,7 @@
         const skillsArray = skillsInput.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
         try{
-            const response = await getRecommendations(cvText, skillsArray, seniorityLevel);
+            const response = await getRecommendations(cvText, query, skillsArray, seniorityLevel);
             jobs = response.jobs;
         } catch (err) {
             console.error(err);
@@ -176,6 +182,16 @@
                     placeholder="Paste your CV text here..."
                     rows="4"
                 ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="job-title">Job Title</label>
+                <input
+                    id="job-title"
+                    type="text"
+                    bind:value={query}
+                    placeholder="e.g. Software Engineer, Data Scientist"
+                />
             </div>
 
             <div class="form-group">
