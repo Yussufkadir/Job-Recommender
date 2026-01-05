@@ -20,8 +20,8 @@ def generate_pdf_from_tailoring(text: str) -> io.BytesIO:
 
     paragraphs = text.split('\n')
 
-    for paragraphs in paragraphs:
-        lines = simpleSplit(paragraphs, "Helvetica", 11, max_width)
+    for paragraph in paragraphs:
+        lines = simpleSplit(paragraph, "Helvetica", 11, max_width)
 
         for line in lines:
             if y_position < 50:
