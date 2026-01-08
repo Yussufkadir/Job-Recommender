@@ -7,3 +7,4 @@ Master thesis project workspace
 - New parameters added for more precise searches.
 - Final steps on finishing the project.
 - Needs deployment
+- Preparing the thesis for the project.
