@@ -9,11 +9,6 @@ export const load: PageLoad = async () => {
         label: "See how it works",
         href: "/learn-more"
       },
-      highlights: [
-        { label: "Avg. match score", value: "92%" },
-        { label: "Teams onboarded", value: "120+" },
-        { label: "Roles parsed daily", value: "15k" }
-      ]
     }
   };
 };
