@@ -163,7 +163,7 @@
 		align-items: center;
 		justify-content: center;
 		padding: 2rem;
-		background: radial-gradient(circle at top, rgba(99, 102, 241, 0.15), transparent 60%);
+		background: radial-gradient(circle at top, rgb(252, 252, 252), transparent 60%);
 	}
 
 	.signup-card {
@@ -171,9 +171,9 @@
 		margin: 2rem auto;
 		padding: 1.75rem;
 		border-radius: 1.5rem;
-		background: rgba(15, 23, 42, 0.85);
+		background: rgba(255, 255, 255, 0.85);
 		border: 1px solid rgba(99, 102, 241, 0.35);
-		color: #f8fafc;
+		color: #000000;
 		display: flex;
 		flex-direction: column;
 		gap: 1.25rem;
@@ -206,8 +206,8 @@
 		display: flex;
 		align-items: center;
 		border-radius: 0.9rem;
-		border: 1px solid rgba(148, 163, 184, 0.4);
-		background: rgba(15, 23, 42, 0.6);
+		border: 1px solid rgba(32, 63, 222, 0.692);
+		background: rgb(248, 248, 248);
 		padding-right: 0.25rem;
 	}
 
@@ -221,7 +221,7 @@
 	.toggle-visibility {
 		border: none;
 		background: transparent;
-		color: #a5b4fc;
+		color: #0e26a0;
 		font-weight: 600;
 		cursor: pointer;
 		padding: 0 0.8rem;
@@ -238,7 +238,7 @@
 		flex-direction: column;
 		gap: 0.5rem;
 		font-size: 0.9rem;
-		color: #cbd5f5;
+		color: #090909;
 	}
 
 	.label-text {
@@ -249,9 +249,9 @@
 	.signup-grid input {
 		border-radius: 0.9rem;
 		border: 1px solid rgba(148, 163, 184, 0.4);
-		background: rgba(15, 23, 42, 0.6);
+		background: rgb(244, 244, 245);
 		padding: 1.5rem 1rem;
-		color: #f8fafc;
+		color: #000000;
 		font-size: 0.95rem;
 	}
 
@@ -267,7 +267,7 @@
 		padding: 1.1rem 1.6rem;
 		font-weight: 800;
 		cursor: pointer;
-		background: linear-gradient(120deg, #6366f1, #a855f7);
+		background: linear-gradient(120deg, #0a0dbd, #1b0475);
 		color: #e0e7ff;
 		min-width: 180px;
 		text-align: center;
@@ -283,7 +283,7 @@
 
 	.social-login p {
 		margin: 0;
-		color: #cbd5f5;
+		color: #777779;
 		font-size: 0.9rem;
 	}
 
@@ -297,8 +297,8 @@
 	.social-button {
 		border-radius: 0.85rem;
 		border: 1px solid rgba(148, 163, 184, 0.4);
-		background: rgba(15, 23, 42, 0.65);
-		color: #f8fafc;
+		background: rgb(253, 253, 253);
+		color: #000000;
 		padding: 0.6rem 1.2rem;
 		display: inline-flex;
 		align-items: center;

@@ -15,7 +15,7 @@
 <style>
 	:global(html) {
 		height: 100%;
-		background: #0f172a;
+		background: #ffffff;
 	}
 
 	:global(body) {
@@ -32,9 +32,9 @@
 			'Helvetica Neue',
 			sans-serif;
 		margin: 0;
-		color: #f8fafc;
+		color: #1e293b;
 		min-height: 100vh;
-		background: radial-gradient(circle at top, #1e293b 0%, #020617 100%);
+		background: radial-gradient(circle at top, #ffffff 0%, #f8fafc 100%);
 		background-attachment: fixed;
 		background-size: cover;
 		background-repeat: no-repeat;

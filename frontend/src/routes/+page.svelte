@@ -55,15 +55,15 @@
 	}
 
 	.login {
-		background: rgba(15, 23, 42, 0.6);
+		background: #0e11ee;
 		color: #f8fafc;
-		border: 1px solid rgba(148, 163, 184, 0.3);
+		border: 1px solid #112a60;
 	}
 
 	.signup {
-		background: linear-gradient(135deg, #6366f1, #a855f7);
+		background: #0e11ee;
 		color: white;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid #112a60;
 	}
 
 	@media (max-width: 600px) {

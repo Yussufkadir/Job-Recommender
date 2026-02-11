@@ -6,10 +6,6 @@
 			label: string;
 			href: string;
 		};
-		highlights?: Array<{
-			label: string;
-			value: string;
-		}>;
 	};
 
 	export let content: HeroContent;
@@ -22,20 +18,8 @@
 		<p class="subtitle">{content.subtitle}</p>
 		<div class="actions">
 			<a class="cta" href={content.cta.href}>{content.cta.label}</a>
-			<button type="button" class="secondary">View demo</button>
 		</div>
 	</div>
-
-	{#if content.highlights?.length}
-		<ul class="stats">
-			{#each content.highlights as stat}
-				<li>
-					<strong>{stat.value}</strong>
-					<span>{stat.label}</span>
-				</li>
-			{/each}
-		</ul>
-	{/if}
 </section>
 
 <style>
@@ -55,7 +39,7 @@
 
 	.subtitle {
 		font-size: 1.1rem;
-		color: #cbd5f5;
+		color: #64748b;
 		max-width: 40ch;
 	}
 
@@ -63,7 +47,7 @@
 		display: inline-flex;
 		padding: 0.35rem 0.75rem;
 		border-radius: 999px;
-		border: 1px solid rgba(255, 255, 255, 0.2);
+		border: 1px solid rgba(16, 40, 221, 0.662);
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
 		font-size: 0.75rem;
@@ -88,14 +72,14 @@
 	}
 
 	.cta {
-		background: linear-gradient(135deg, #6366f1, #a855f7);
+		background: linear-gradient(135deg, #0e11ee, #112a60);
 		color: white;
 		box-shadow: 0 20px 40px rgba(99, 102, 241, 0.35);
 	}
 
 	.secondary {
 		background: transparent;
-		border: 1px solid rgba(248, 250, 252, 0.4);
+		border: 1px solid rgba(9, 59, 211, 0.781);
 		color: inherit;
 	}
 
@@ -111,25 +95,6 @@
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 		gap: 1rem;
-	}
-
-	.stats li {
-		background: rgba(15, 23, 42, 0.6);
-		border: 1px solid rgba(99, 102, 241, 0.35);
-		border-radius: 1rem;
-		padding: 1.5rem;
-		text-align: center;
-	}
-
-	.stats strong {
-		display: block;
-		font-size: 1.75rem;
-		margin-bottom: 0.25rem;
-	}
-
-	.stats span {
-		font-size: 0.9rem;
-		color: #cbd5f5;
 	}
 
 	@media (max-width: 600px) {
