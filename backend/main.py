@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import engine, Base
 from app.models import user
-
+import os
 from app.routers import auth, cv_tailor, jobs, analytics
 
 Base.metadata.create_all(bind=engine)
@@ -19,9 +19,18 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+frontend_url = os.getenv(
+    "FRONTEND_URL",
+    "https://job-recommender-isrg9bav2-yussufkadirs-projects-ae0e729f.vercel.app"
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        frontend_url
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
