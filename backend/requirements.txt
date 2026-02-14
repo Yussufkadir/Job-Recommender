@@ -1,18 +1,22 @@
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
+
 pydantic==2.9.2
 pydantic-settings==2.6.1
 email-validator==2.2.0
 
 sqlalchemy==1.4.54
 python-dotenv==1.0.1
+pandas==2.2.3
 
 passlib[bcrypt]==1.7.4
 python-jose[cryptography]==3.3.0
 python-multipart==0.0.20
+fastapi-sso==0.18.0
 
 httpx==0.28.1
+requests==2.32.3
+beautifulsoup4==4.12.3
+
 reportlab==4.2.2
 pypdf==5.1.0
-beautifulsoup4==4.12.3
-pandas==2.2.3
