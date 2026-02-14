@@ -3,14 +3,24 @@ from pydantic import BaseModel
 import spacy 
 from gensim.models import Word2Vec
 import os
+from huggingface_hub import snapshot_download
+
+MODEL_DIR = snapshot_download(
+    repo_id="syurmen/recommender_ner_model",
+    local_dir="/tmp/model",
+    local_dir_use_symlinks=False
+)
+
+KG_DIR = snapshot_download(
+    repo_id="syurmen/knowledge_graph_model",
+    local_dir="/tmp/model",
+    local_dir_use_symlinks=False
+)
 
 app = FastAPI()
 
-model_dir = os.path.join(os.getcwd(), "job_recommender.model")
-ner_path = os.path.join(os.getcwd(), "transformer-models/model-best")
-
-nlp = spacy.load(ner_path)
-model = Word2Vec.load(model_dir)
+nlp = spacy.load(os.path.join(MODEL_DIR, "transformer-models/model-best"))
+model = Word2Vec.load(os.path.join(KG_DIR, "job_recommender.model"))
 
 class ScoreRequests(BaseModel):
     user_skills: list[str]
