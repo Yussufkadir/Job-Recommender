@@ -4,8 +4,8 @@ import os
 import requests
 
 try:
-    from .adzuna_job_finder import AdzunaJobFinder
-    from .nofluff_scraper import NoFluffScrapper
+    from app.scrapers.adzuna_job_finder import AdzunaJobFinder
+    from app.scrapers.nofluff_scraper import NoFluffScrapper
 except:
     from adzuna_job_finder import AdzunaJobFinder
     from nofluff_scraper import NoFluffScrapper
@@ -14,7 +14,7 @@ class JobAggregator():
     def __init__(self):
         self.adzuna = AdzunaJobFinder()
         self.nofluff = NoFluffScrapper()
-        self.scorer_url = "http://localhost:8001/score"
+        self.scorer_url = os.getenv("RECOMMENDER_URL", "http://127.0.0.1:8001")
 
     def get_all_jobs(self, query, user_skills=None, seniority=None):
         all_jobs = []

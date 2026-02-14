@@ -8,7 +8,7 @@ import httpx
 
 router = APIRouter()
 
-LLM_SERVICE_URL = "http://127.0.0.1:8002/cv_tailor"
+LLM_SERVICE_URL = os.getenv("LLM_SERVICE_URL", "http://127.0.0.1:8002")
 
 class PDFRequest(BaseModel):
     text: str
