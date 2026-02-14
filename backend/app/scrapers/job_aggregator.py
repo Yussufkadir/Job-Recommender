@@ -3,12 +3,9 @@ import sys
 import os
 import requests
 
-try:
-    from app.scrapers.adzuna_job_finder import AdzunaJobFinder
-    from app.scrapers.nofluff_scraper import NoFluffScrapper
-except:
-    from adzuna_job_finder import AdzunaJobFinder
-    from nofluff_scraper import NoFluffScrapper
+
+from app.scrapers.adzuna_job_finder import AdzunaJobFinder
+from app.scrapers.nofluff_scraper import NoFluffScrapper
 
 class JobAggregator():
     def __init__(self):
