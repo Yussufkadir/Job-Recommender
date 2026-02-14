@@ -3,7 +3,7 @@ import os
 
 class RecommenderClient:
     def __init__(self):
-        self.api_url = os.getenv("RECOMMENDER_SERVICE_URL", "http://localhost:8001")
+        self.api_url = os.getenv("RECOMMENDER_URL", "http://localhost:8001")
 
     def get_score(self, user_skills, job_description):
         try:
