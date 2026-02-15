@@ -8,11 +8,23 @@ from app.core.security import create_access_token
 from app.core.config import settings
 from fastapi_sso.sso.google import GoogleSSO
 from fastapi_sso.sso.github import GithubSSO
+import os
 
 router = APIRouter()
 
-google_sso = GoogleSSO(settings.GOOGLE_CLIENT_ID, settings.GOOGLE_CLIENT_SECRET, "http://localhost:8000/auth/google/callback") if settings.GOOGLE_CLIENT_ID else None
-github_sso = GithubSSO(settings.GITHUB_CLIENT_ID, settings.GITHUB_CLIENT_SECRET, "http://localhost:8000/auth/github/callback") if settings.GITHUB_CLIENT_ID else None
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+
+google_sso = GoogleSSO(
+    settings.GOOGLE_CLIENT_ID, 
+    settings.GOOGLE_CLIENT_SECRET, 
+    f"{BACKEND_URL}/auth/google/callback"
+    ) if settings.GOOGLE_CLIENT_ID else None
+github_sso = GithubSSO(
+    settings.GITHUB_CLIENT_ID, 
+    settings.GITHUB_CLIENT_SECRET, 
+    f"{BACKEND_URL}/auth/github/callback"
+    ) if settings.GITHUB_CLIENT_ID else None
 
 @router.post("/signup", response_model=UserResponse)
 async def signup(user: UserCreate, db: Session = Depends(get_db)):
@@ -57,7 +69,7 @@ async def google_callback(request, db: Session = Depends(get_db)):
     
     access_token = create_access_token(subject=user.email)
 
-    frontend_url = f"http://localhost:5173/login/success?token={access_token}"
+    frontend_url = f"{FRONTEND_URL}/login/success?token={access_token}"
     return RedirectResponse(url=frontend_url)
 
 @router.get("/github/login")
@@ -80,5 +92,5 @@ async def github_callback(request, db:Session = Depends(get_db)):
     
     access_token = create_access_token(subject=user.email)
 
-    frontend_url = f"http://localhost:5173/login/success?token={access_token}"
+    frontend_url = f"{FRONTEND_URL}/login/success?token={access_token}"
     return RedirectResponse(url=frontend_url)
