@@ -21,7 +21,7 @@ app = FastAPI(
 
 frontend_url = os.getenv(
     "FRONTEND_URL",
-    "https://job-recommender-isrg9bav2-yussufkadirs-projects-ae0e729f.vercel.app"
+    "https://job-recommender-phi.vercel.app"
 )
 
 app.add_middleware(
