@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { API_BASE } from '$lib/api';
 	const authProviders = [
 		{ name: 'Gmail', key: 'gmail', icon: '✉️' },
 		{ name: 'GitHub', key: 'github', icon: '🐙' }
@@ -12,7 +13,7 @@
 		errorMessage = '';
 
 		try {
-			const response = await fetch('http://localhost:8000/auth/login', {
+			const response = await fetch(`${API_BASE}/auth/login`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ email, password })
@@ -34,9 +35,9 @@
 
 	function handleSocialLogin(key: string) {
 		if (key === 'gmail') {
-			window.location.href = 'http://localhost:8000/auth/google/login';
+			window.location.href = `${API_BASE}/auth/google/login`;
 		} else if (key === 'github') {
-			window.location.href = 'http://localhost:8000/auth/github/login';
+			window.location.href = `${API_BASE}/auth/github/login`;
 		}
 	}
 </script>

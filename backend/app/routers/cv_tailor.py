@@ -10,6 +10,8 @@ router = APIRouter()
 
 LLM_SERVICE_URL = os.getenv("LLM_SERVICE_URL", "http://127.0.0.1:8002")
 
+RECOMMENDER_URL = os.getenv("RECOMMENDER_URL", "http://127.0.0.1:8001")
+
 class PDFRequest(BaseModel):
     text: str
 
@@ -76,7 +78,7 @@ async def parse_cv_text(file: UploadFile = File(...)):
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             response = await client.post(
-                "http://localhost:8001/extract",
+                f"{RECOMMENDER_URL}/extract",
                 json={"text": text}
             )
             if response.status_code == 200:
