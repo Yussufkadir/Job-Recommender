@@ -9,7 +9,6 @@ import httpx
 router = APIRouter()
 
 LLM_SERVICE_URL = os.getenv("LLM_SERVICE_URL", "http://127.0.0.1:8002")
-
 RECOMMENDER_URL = os.getenv("RECOMMENDER_URL", "http://127.0.0.1:8001")
 
 class PDFRequest(BaseModel):

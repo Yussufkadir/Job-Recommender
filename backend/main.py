@@ -1,10 +1,13 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 from app.core.database import engine, Base
 from app.models import user
 import os
 from app.routers import auth, cv_tailor, jobs, analytics
+
+load_dotenv()
 
 Base.metadata.create_all(bind=engine)
 
