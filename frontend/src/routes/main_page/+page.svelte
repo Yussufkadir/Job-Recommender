@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getRecommendations, type Job } from '$lib/api';
+	import { API_BASE, getRecommendations, type Job } from '$lib/api';
 
 	let cvText = '';
 	let skillsInput = '';
@@ -24,7 +24,7 @@
 			skillsInput = 'Extracting...';
 
 			try {
-				const res = await fetch('http://localhost:8000/api/parse_cv', {
+				const res = await fetch(`${API_BASE}/api/parse_cv`, {
 					method: 'POST',
 					body: formData
 				});
@@ -94,7 +94,7 @@
 			formData.append('file', cvFile);
 			formData.append('job_description', job.description);
 
-			const res = await fetch('http://localhost:8000/api/cv_tailor', {
+			const res = await fetch(`${API_BASE}/api/cv_tailor`, {
 				method: 'POST',
 				body: formData
 			});
@@ -116,7 +116,7 @@
 
 	async function downloadPDF(text: string) {
 		try {
-			const res = await fetch('http://localhost:8000/api/download_pdf', {
+			const res = await fetch(`${API_BASE}/api/download_pdf`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ text: text })

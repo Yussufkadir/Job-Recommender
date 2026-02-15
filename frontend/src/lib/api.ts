@@ -1,4 +1,5 @@
-const API_URL = "http://localhost:8000/api";
+export const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const API_URL = `${API_BASE}/api`;
 
 export interface Job {
     title: string;
@@ -10,7 +11,7 @@ export interface Job {
     match_score: number;
 }
 
-export interface RecommendationResponse{
+export interface RecommendationResponse {
     jobs: Job[];
     message?: string;
 }
@@ -19,10 +20,10 @@ export async function getRecommendations(cvText: string, query: string, skills: 
     const res = await fetch(`${API_URL}/jobs/recommend`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cv_text: cvText, query: query, skills: skills, seniority: seniority})
+        body: JSON.stringify({ cv_text: cvText, query: query, skills: skills, seniority: seniority })
     });
 
-    if (!res.ok){
+    if (!res.ok) {
         throw new Error(`API Error: ${res.statusText}`);
     }
     return await res.json()
