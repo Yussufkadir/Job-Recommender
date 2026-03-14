@@ -1,4 +1,6 @@
-export const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+import { authFetch } from './auth';
+
+export const API_BASE = import.meta.env.VITE_BASE_URL ?? import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 const API_URL = `${API_BASE}/api`;
 
 export interface Job {
@@ -17,7 +19,7 @@ export interface RecommendationResponse {
 }
 
 export async function getRecommendations(cvText: string, query: string, skills: string[], seniority: string = "All"): Promise<RecommendationResponse> {
-    const res = await fetch(`${API_URL}/jobs/recommend`, {
+    const res = await authFetch(`${API_URL}/jobs/recommend`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cv_text: cvText, query: query, skills: skills, seniority: seniority })

@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { API_BASE } from '$lib/api';
+	import { setToken } from '$lib/auth';
+
 	const authProviders = [
 		{ name: 'Gmail', key: 'gmail', icon: '✉️' },
 		{ name: 'GitHub', key: 'github', icon: '🐙' }
@@ -11,6 +13,7 @@
 
 	async function handleLogin() {
 		errorMessage = '';
+		console.log('handleLogin started', { email });
 
 		try {
 			const response = await fetch(`${API_BASE}/auth/login`, {
@@ -19,12 +22,17 @@
 				body: JSON.stringify({ email, password })
 			});
 
+			console.log('Login response status:', response.status);
 			const data = await response.json();
+			console.log('Login data:', data);
 
 			if (response.ok) {
-				localStorage.setItem('token', data.access_token);
+				console.log('Login OK, setting token...');
+				setToken(data.access_token);
+				console.log('Token set, navigating to /main_page...');
 				window.location.href = '/main_page';
 			} else {
+				console.log('Login failed:', data.detail);
 				errorMessage = data.detail || 'Login Failed';
 			}
 		} catch (error) {
@@ -83,6 +91,14 @@
 			</label>
 			<div class="actions">
 				<button type="submit" class="primary-action">Log in</button>
+			</div>
+			<div style="text-align: center; margin-top: 0.5rem;">
+				<a
+					href="/forgot-password"
+					style="color: #6366f1; font-size: 0.9rem; text-decoration: none;"
+				>
+					Forgot Password?
+				</a>
 			</div>
 		</form>
 		<div class="social-login">

@@ -1,8 +1,10 @@
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks, Depends
 from ..services.file_processor import extract_text_from_file
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from ..services.pdf_generator import generate_pdf_from_tailoring
+from ..core.security import get_current_user
+from ..models.user import User
 import os
 import httpx
 
@@ -15,7 +17,7 @@ class PDFRequest(BaseModel):
     text: str
 
 @router.post("/download_pdf")
-async def download_tailored_cv(req: PDFRequest):
+async def download_tailored_cv(req: PDFRequest, current_user: User = Depends(get_current_user)):
     pdf_buffer = generate_pdf_from_tailoring(req.text)
 
     return StreamingResponse(
@@ -43,7 +45,12 @@ async def generate_tailored_cv(cv_text: str, job_description: str) -> str:
             return "Error: could not connect to LLM service."
 
 @router.post("/cv_tailor")
-async def cv_tailor(background_tasks: BackgroundTasks, file: UploadFile = File(...), job_description: str = Form(...)):
+async def cv_tailor(
+    background_tasks: BackgroundTasks, 
+    file: UploadFile = File(...), 
+    job_description: str = Form(...),
+    current_user: User = Depends(get_current_user)
+):
    
     file.file.seek(0, 2)
     if file.file.tell() > 5 * 1024 * 1024:
@@ -60,7 +67,10 @@ async def cv_tailor(background_tasks: BackgroundTasks, file: UploadFile = File(.
     return {"message": "CV processed successfully", "tailored_cv": tailored_content}
 
 @router.post("/parse_cv")
-async def parse_cv_text(file: UploadFile = File(...)):
+async def parse_cv_text(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
 
     file.file.seek(0, 2)
     if file.file.tell() > 5 * 1024 * 1024:
