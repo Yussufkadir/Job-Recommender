@@ -6,10 +6,15 @@ from app.core.database import engine, Base
 from app.models import user
 import os
 from app.routers import auth, cv_tailor, jobs, analytics
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 load_dotenv()
 
 Base.metadata.create_all(bind=engine)
+
+from app.models.user import PasswordResetToken
+from app.models.user import User
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,6 +26,10 @@ app = FastAPI(
     version = "0.1.0",
     lifespan=lifespan
 )
+
+from app.routers.auth import limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 frontend_url = os.getenv(
     "FRONTEND_URL",
