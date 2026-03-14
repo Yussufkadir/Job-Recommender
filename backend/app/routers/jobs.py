@@ -1,9 +1,11 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List, Optional
 
 from app.scrapers.job_aggregator import JobAggregator
 from app.services.recommender_client import RecommenderClient
+from app.core.security import get_current_user
+from app.models.user import User
 
 router = APIRouter()
 
@@ -15,7 +17,10 @@ class JobSearchRequest(BaseModel):
     query: Optional[str] = "Software Engineer"
 
 @router.post("/recommend")
-async def recommend_jobs(request: JobSearchRequest):
+async def recommend_jobs(
+    request: JobSearchRequest,
+    current_user: User = Depends(get_current_user)
+):
 
     print(f"Recieved search request for skills {request.skills}")
 
