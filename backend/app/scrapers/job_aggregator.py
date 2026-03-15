@@ -23,9 +23,12 @@ class JobAggregator():
             adzuna_list = df_adzuna.to_dict("records")
             all_jobs.extend(adzuna_list)
 
-        
-        nofluff_jobs = self.nofluff.find_jobs(query, limit=5, seniority=seniority)
-        all_jobs.extend(nofluff_jobs)
+
+        if os.getenv("RENDER") == "true":
+            print("Skipping NoFluffScraper on Render to prevent Memory Limit Exceeded (Chrome takes > 500MB)")
+        else:
+            nofluff_jobs = self.nofluff.find_jobs(query, limit=5, seniority=seniority)
+            all_jobs.extend(nofluff_jobs)
 
         df =  pd.DataFrame(all_jobs)
 
