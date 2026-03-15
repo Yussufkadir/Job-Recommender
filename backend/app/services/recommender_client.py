@@ -12,7 +12,7 @@ class RecommenderClient:
                 "job_description": job_description
             }
 
-            response = requests.post(f"{self.api_url}/score", json=payload, timeout=10)
+            response = requests.post(f"{self.api_url}/score", json=payload, timeout=60)
 
             if response.status_code == 200:
                 return response.json().get("score", 0)
