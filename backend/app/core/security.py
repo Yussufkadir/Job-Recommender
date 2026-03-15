@@ -9,7 +9,12 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
 
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+pwd_context = CryptContext(
+    schemes=["argon2"],
+    deprecated="auto",
+    argon2__memory_cost=16384,
+    argon2__time_cost=2
+)
 bearer_scheme = HTTPBearer()
 
 revoked_tokens: set[str] = set()
