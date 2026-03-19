@@ -46,20 +46,6 @@ def authenticate_user(db: Session, email: str, password: str):
     print(f"DEBUG: Authentication successful for {email}")
     return user
 
-
-def create_oauth_user(db: Session, email: str, provider: str):
-    db_user = User(
-        email=email,
-        hashed_password=None,
-        is_active=True,
-        provider=provider
-    )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
-
-
 def create_password_reset_token(db: Session, email: str) -> str | None :
     user = get_user_by_email(db, email)
     if not user:

@@ -2,10 +2,6 @@
 	import { API_BASE } from '$lib/api';
 	import { setToken } from '$lib/auth';
 
-	const authProviders = [
-		{ name: 'Gmail', key: 'gmail', icon: '✉️' },
-		{ name: 'GitHub', key: 'github', icon: '🐙' }
-	];
 	let showPassword = false;
 	let email = '';
 	let password = '';
@@ -38,14 +34,6 @@
 		} catch (error) {
 			console.error({ Error: error });
 			errorMessage = 'Could not connect to the server.';
-		}
-	}
-
-	function handleSocialLogin(key: string) {
-		if (key === 'gmail') {
-			window.location.href = `${API_BASE}/auth/google/login`;
-		} else if (key === 'github') {
-			window.location.href = `${API_BASE}/auth/github/login`;
 		}
 	}
 </script>
@@ -103,18 +91,6 @@
 		</form>
 		<div class="social-login">
 			<p>Or continue with</p>
-			<div class="social-buttons">
-				{#each authProviders as provider}
-					<button
-						type="button"
-						class={`social-button ${provider.key}`}
-						on:click={() => handleSocialLogin(provider.key)}
-					>
-						<span aria-hidden="true">{provider.icon}</span>
-						{provider.name}
-					</button>
-				{/each}
-			</div>
 		</div>
 	</section>
 </section>
@@ -265,13 +241,5 @@
 
 	.social-button span {
 		font-size: 1.1rem;
-	}
-
-	.social-button.gmail {
-		border-color: rgba(244, 114, 182, 0.6);
-	}
-
-	.social-button.github {
-		border-color: rgba(148, 163, 184, 0.8);
 	}
 </style>
