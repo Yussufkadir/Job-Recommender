@@ -1,3 +1,672 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:ad642bd98ba27408d511cc71beff713dedd03ef05601e270903ac213fdfe727c
-size 19684
+title,link,full_text,source
+Senior Backend Engineer (Python),https://nofluffjobs.com/pl/job/senior-backend-engineer-python-grassroots-remote,"Senior Backend Engineer (Python)
+GrassRoots
+Kategoria:
+Backend
+, 
+Python
+Senior
+Praca zdalna
+Kraków, Rynek Główny 39-40/2
+Oferta ważna do: 01.01.2026 (zostało 23 dni)
+Obowiązkowe
+Python
+Angielski (B2)
+Polski (B2)
+Opis wymagań
+Oryginalny tekst. 
+Pokaż tłumaczenie
+You’ll be great if you have
+6+ years professional backend experience (or equivalent impact).
+Strong Python skills with FastAPI and/or Django in production.
+Deep SQL chops with PostgreSQL (query tuning, indexes, migrations, transactional integrity).
+Asynchronous Python (async/await), task queues (Celery/RQ), event systems.
+Experience building distributed, containerized systems on AWS with Terraform.
+Proficiency with Redis (caching, queues, locks) and designing idempotent background jobs.
+Ownership mindset: you ship, monitor, and iterate; you write tests and docs by default.
+Excellent collaboration and product sense.
+
+Nice to have
+Geospatial experience: PostGIS, Shapely/GEOS, GDAL/PROJ; tiling/geometry operations.
+Data/compute: Polars/Pandas, NumPy; report generation (PDF/CSV pipelines).
+Security & compliance best practices (authN/Z, secrets, least privilege).
+Offline-first sync, CRDTs, or merge/conflict-resolution patterns for mobile clients.
+Observability: structured logging, metrics, tracing; SLOs.
+Opis oferty
+Oryginalny tekst. 
+Pokaż tłumaczenie
+About PastureMap
+PastureMap helps ranchers plan grazing, improve soil health, and track carbon outcomes. We build tools for livestock and grazing management, forage monitoring, weather-aware plans, and sustainability reporting. If you want your code to make the land healthier and ranching more profitable, you’ll feel at home here.
+The role
+We’re hiring a Senior Backend Engineer to own critical services across our FastAPI/Django platform. You’ll design and scale APIs, data models, and background jobs that power ranch operations, offline-first sync, and environmental reporting. You’ll collaborate with product, data, frontend and carbon science team to ship reliable features fast.
+Zakres obowiązków
+Oryginalny tekst. 
+Pokaż tłumaczenie
+Design and scale APIs (REST/JSON) in Python 3.10+ using FastAPI and understand Django where appropriate.
+Model complex domain data (livestock, paddocks, seasons, grazing events) with PostgreSQL (+ SQLAlchemy, PostGIS must-to-have).
+Build robust background processing (task queues, scheduling, idempotency, retries) and conflict-free offline sync for mobile clients.
+Drive performance, security, and reliability: profiling, caching (Redis), rate limiting, pagination, observability (logs/metrics/traces).
+Own infrastructure-as-code with Terraform; containerize with Docker and deploy on AWS (ECS, S3, VPC).
+Maintain clean CI/CD pipelines (GitHub Workflows), code quality (type hints, pytest), and documentation.
+pokaż wszystko (8)
+Szczegóły oferty
+Start ASAP
+Praca w pełni zdalna
+Sprzęt
+ Apple 
+ Komputer: Notebook 
+Benefity
+Budżet na szkolenia
+Płaska struktura
+Małe zespoły
+O firmie Scaleworks
+Utworzona w:
+2009
+Wielkość firmy:
++400
+Lokalizacje:
+Kraków + 1
+22 000 – 24 000 PLN
++ VAT (B2B) miesięcznie 
+oblicz ""na rękę""
+18 000 – 20 000 PLN
+brutto miesięcznie (UoP) 
+oblicz netto
+Aplikuj
+Zapisz ofertę
+Analiza CV
+BETA
+Oceń tę ofertę
+😫
+🙁
+😐
+🙂
+😃
+ZOBACZ PODOBNE OFERTY
+Mid Python Developer
+15 000 – 20 000 PLN
+Backend
+Python
+Django
+Flask
+Link Group
+Zdalnie
+Senior Backend Developer (Python)
+30 000 PLN
+Backend
+Python
+Django
+PostgreSQL
+Vatix
+Kraków
+NOWA
+Senior/Principal Python Developer
+23 000 – 31 000 PLN
+Backend
+Python
+PySpark
+Spark
+Xebia sp. z o.o.
+Zdalnie
+ +4
+Python Software Developer
+18 000 – 22 000 PLN
+Backend
+Python
+pytest
+REST API
+Silvair
+Kraków
+NOWA
+Python Developer
+13 000 – 18 000 PLN
+Backend
+Python
+API
+NoSQL
+Tooploox
+Zdalnie
+ +2
+NOWA
+Python Developer
+16 800 – 20 160 PLN
+Backend
+Python
+SQL
+Teradata
+Devire
+Zdalnie
+Senior Backend Engineer (Python)
+7 000 – 7 300 USD
+Backend
+Python
+AI
+AWS
+Adaptiq
+Zdalnie
+NOWA
+Python Backend Developer
+20 000 – 23 500 PLN
+Backend
+Python
+PySpark
+Cloud
+SquareOne
+Zdalnie
+ +5
+NOWA
+Senior Python Developer
+19 000 – 27 500 PLN
+Backend
+Python
+Django
+FastAPI
+Xebia sp. z o.o.
+Zdalnie
+ +4
+Python Developer
+23 520 – 28 560 PLN
+Backend
+Python
+PySpark
+Databricks
+AVENGA (Agencja Pracy, nr KRAZ: 8448)
+Zdalnie
+NOWA",NoFluffJobs
+Senior AI Engineer (LLM | Langchain | Python),https://nofluffjobs.com/pl/job/senior-ai-engineer-llm-langchain-python-1dea-remote-1,Error 400 (Bad Request)!!1400.That’s an error.The server cannot process the request because it is malformed. It should not be retried.That’s all we know.,NoFluffJobs
+Staff Python Engineer,https://nofluffjobs.com/pl/job/staff-python-engineer-box-warsaw,"Staff Python Engineer
+Box Inc.
+Kategoria:
+Backend
+, 
+Python
+Expert
+Hybrydowo
++1
+Oferta ważna do: 07.01.2026 (zostało 29 dni)
+Obowiązkowe
+Python
+Angielski (B2)
+Mile widziane
+Node.js
+JavaScript
+Kubernetes
+Terraform
+GCP
+Opis wymagań
+Oryginalny tekst. 
+Pokaż tłumaczenie
+Candidate Profile
+Essential Skills: 
+Strong proficiency in Python, including debugging and profiling. 
+Broad software engineering expertise across multiple languages and paradigms. 
+Experience with distributed systems, Kubernetes, and cloud environments. 
+Ability to debug complex system-level issues (threading, networking, VM behavior). 
+Strong architectural thinking, ensuring consistency across services. 
+Valuable Skills: 
+Node.js and JavaScript experience, especially with adapters and integrations. 
+Exposure to frontend development patterns (not required but helpful). 
+Familiarity with enterprise migrations or large-scale content management. 
+Mindset: 
+Systems thinker who can see both deep technical detail and cross-service architectural alignment. 
+Opinionated yet collaborative, able to challenge peers respectfully. 
+Proactive ownership and drive to ensure solutions are complete and correct. 
+Diplomatic leadership style that mentors and uplifts senior engineers while maintaining technical authority. 
+Opis oferty
+Oryginalny tekst. 
+Pokaż tłumaczenie
+Shuttle is Box’s enterprise migration solution. Its mission is to help organizations securely and efficiently move their content from legacy systems and third-party storage providers into Box. This is critical for customer adoption, as smooth migration is often the first step to unlocking value from Box’s platform. Shuttle ensures migrations are reliable, scalable, and maintain fidelity of files, metadata, and permissions. 
+Zakres obowiązków
+Oryginalny tekst. 
+Pokaż tłumaczenie
+Own architectural consistency and validate significant technical decisions across Shuttle’s services.
+Design and guide the evolution of critical systems, including the migration adapters and backend microservices.
+Drive resolution of complex system-level problems, whether in Kubernetes orchestration, cloud VMs, or network behavior.
+Ensure fixes address root causes, not just symptoms.
+Provide technical mentorship and oversight to senior and mid-level engineers.
+Collaborate with other Box teams on integrations (Box Consulting, Archive, Metadata initiatives and most likely File System and API in the future).
+pokaż wszystko (7)
+Szczegóły oferty
+Rekrutacja online
+Język rekrutacji: polski&angielski
+Start ASAP
+Praca zdalna przez 2 dni w tygodniu
+Elastyczne godziny pracy
+Sprzęt
+ Apple 
+ Komputer: Notebook 
+ Monitory: Opcjonalnie 
+Metodologia
+Agile management
+Scrum
+Issue tracking tool
+Jira
+Knowledge repository
+Confluence
+Code reviews
+GitHub
+Version control system
+GIT
+Benefity
+Creative tax
+Stock options
+Life & group insurance
+Prywatna opieka medyczna
+Udemy for business
+Phone reimbursement
+Sport/fitness reimbursement
+Międzynarodowe projekty
+Płaska struktura
+Friendly atmosphere
+Additional holidays
+Inclusive culture
+Developental events
+No probation period
+Equity
+ESSP
+O firmie Box
+When asked about our favorite part of working at Box, the answer is almost always “the people.”
+Thierry Chassaing
+SVP Engineering & TechOps at Box Inc.
+Utworzona w:
+2005
+Wielkość firmy:
+2000+
+Lokalizacje:
+Redwood City + 1
+Box (NYSE:BOX) is the leader in Intelligent Content Management. Our platform enables organizations to fuel collaboration, manage the entire content lifecycle, secure critical content, and transform business workflows with enterprise AI. We help companies thrive in the new AI-first era of business. Founded in 2005, Box simplifies work for leading global organizations, including JLL, Morgan Stanley, and Nationwide. Box is headquartered in Redwood City, CA, with offices across the United States, Europe, and Asia.
+40 000 – 52 000 PLN
+brutto miesięcznie (UoP) 
+oblicz netto
+Aplikuj
+Zapisz ofertę
+Analiza CV
+BETA
+Oceń tę ofertę
+😫
+🙁
+😐
+🙂
+😃
+ZOBACZ PODOBNE OFERTY
+Senior Software Engineer (Python/Rust)
+27 000 – 37 000 PLN
+Backend
+Python
+AWS
+Rust
+hyperexponential
+Warszawa
+Python Developer
+13 000 – 18 000 PLN
+Backend
+Python
+API
+NoSQL
+Tooploox
+Zdalnie
+ +2
+NOWA
+Python Developer
+19 320 – 21 840 PLN
+Backend
+Python
+polski
+ITFS Sp. z o.o.
+Warsaw
+Middle/Senior Python Engineer
+13 440 – 24 360 PLN
+Backend
+Python
+Django
+PostgreSQL
+Godel Technologies Europe
+Łódź
+ +4
+Software Engineer
+12 000 – 19 000 PLN
+Backend
+Python
+SQL
+REST API
+CloudFerro
+Warszawa
+Senior Python Developer
+19 000 – 27 500 PLN
+Backend
+Python
+Django
+FastAPI
+Xebia sp. z o.o.
+Zdalnie
+ +4
+Senior Python Developer
+39 000 – 46 000 PLN
+Backend
+Python
+Server-side Python
+OOP
+Link Group
+Warszawa
+Senior/Principal Python Developer
+23 000 – 31 000 PLN
+Backend
+Python
+PySpark
+Spark
+Xebia sp. z o.o.
+Zdalnie
+ +4
+Python Backend Developer
+20 000 – 23 500 PLN
+Backend
+Python
+PySpark
+Cloud
+SquareOne
+Zdalnie
+ +5
+NOWA
+Software Engineer
+14 000 – 21 000 PLN
+Backend
+Node.js
+TypeScript
+Python
+Bayer
+Warsaw",NoFluffJobs
+Senior Backend Developer (Python),https://nofluffjobs.com/pl/job/senior-backend-developer-python-vatix-krakow,"Senior Backend Developer (Python)
+Vatix
+Kategoria:
+Backend
+, 
+Python
+Senior
+Hybrydowo
++1
+Oferta ważna do: 16.01.2026 (zostało 38 dni)
+Obowiązkowe
+Python
+Django
+PostgreSQL
+API
+AI
+Angielski
+Opis wymagań
+Oryginalny tekst. 
+Pokaż tłumaczenie
+Technical Skills:
+Advanced Python and Django expertise
+Experience with Django REST Framework
+Advanced PostgreSQL knowledge
+Mastery of API design and HTTP standards
+Familiarity with DevOps practices
+Mindset:
+Openness to modern development tools and practices, including AI-assisted coding
+Curiosity about emerging technologies and how they can improve workflows
+Willingness to experiment and continuously improve
+Soft Skills:
+Strong communication skills in English
+Strategic thinking with attention to both immediate and long-term implications
+Collaborative approach to working with cross-functional teams
+Commitment to mentoring and sharing knowledge
+Opis oferty
+Oryginalny tekst. 
+Pokaż tłumaczenie
+About Vatix
+Vatix is a fast-growing SaaS company founded in London and Kraków in 2019. We're on a mission to bring a fresh, user-centric approach to the world of Governance, Risk, and Compliance software — with a particular focus on Health & Safety and Operational Excellence. Today, over 800 businesses and government organisations around the world trust our platform to protect their people, streamline safety workflows, and drive operational performance.
+We're not VC-owned, and we're not chasing vanity metrics. Instead, we're building a long-term, sustainable company focused on solving real-world problems and becoming one of the most consequential players in our category. Our customers include industry leaders such as Cambridge University, Siemens, Intel, and major government departments — organisations that depend on us for mission-critical systems.
+At Vatix, you'll work across a diverse product suite spanning web applications, mobile apps, IoT-enabled safety devices, and data platforms. That means a rare opportunity to learn and grow across a range of technologies — all while being supported by a collaborative team that values quality, simplicity, and mentorship.
+The Role
+Location: Kraków, Poland (Hybrid - 3 days per week in office) Contract: B2B Level: Senior
+We're looking for a Senior Backend Developer who combines deep Python expertise with a forward-thinking approach to software development. You'll be instrumental in designing and building the backend systems that power our platform, working alongside a talented team that values clean architecture, continuous improvement, and leveraging modern tools — including AI-assisted development.
+How We Work
+Design before implementation — always
+Continuous integration & quality assurance before shipping
+Small, frequent releases over big, risky ones
+Scrum, retrospectives, and room for improvement
+Hybrid: 3 days per week in our Kraków office, with flexibility on remaining days
+AI tools encouraged and supported as part of our development workflow
+What We Offer
+B2B contract
+Hybrid work culture (3 days in Kraków office)
+A fast-paced, supportive environment focused on learning and mentorship
+Training budget and regular growth check-ins
+Access to modern development tools, including AI coding assistants
+Regular team meetups and collaboration sessions
+Holiday entitlement aligned with Kodeks Pracy (Labour Code)
+Office Location: Józefitów 8, Kraków
+If you're excited by the idea of joining a company with serious ambition, a clear roadmap, and a strong focus on people — this is the place to build your career.
+
+Zakres obowiązków
+Oryginalny tekst. 
+Pokaż tłumaczenie
+Design and implement robust backend services using Python and Django, ensuring scalability, maintainability, and performanc
+Lead the architecture and design of new features and services with a focus on API-first development and deep understanding of HTTP standards
+Champion clean, well-documented, and efficient code with a strong commitment to testing and quality
+Ensure data integrity and efficiency in database usage, particularly with PostgreSQL, and guide optimisation strategies as needed
+Collaborate closely with frontend developers, QA, and DevOps to integrate backend systems into the broader product ecosystem
+Identify and solve complex problems with a strategic mindset, considering both immediate needs and long-term system evolution
+pokaż wszystko (9)
+Szczegóły oferty
+Rekrutacja online
+Start ASAP
+Praca zdalna przez 2 dni w tygodniu
+Metodologia
+QA manager
+Unit tests
+Tester(s)
+2
+Agile management
+Scrum
+Issue tracking tool
+Jira
+Knowledge repository
+GitHub
+Code reviews
+GitHub
+Pair programming
+Version control system
+GIT
+Swoboda wyboru narzędzi
+Udogodnienia w biurze
+Darmowa kawa
+Darmowe przekąski
+Darmowe napoje
+Bez wymaganego dress code'u
+Atmosfera startupu
+Nowoczesne biuro
+Benefity
+Budżet na szkolenia
+Płaska struktura
+O firmie Vatix
+Utworzona w:
+2018
+Wielkość firmy:
+10+
+Lokalizacje:
+Kraków + 1
+30 000 PLN
++ VAT (B2B) miesięcznie 
+oblicz ""na rękę""
+Aplikuj
+Zapisz ofertę
+Analiza CV
+BETA
+Oceń tę ofertę",NoFluffJobs
+Python Backend Developer,https://nofluffjobs.com/pl/job/python-backend-developer-squareone-remote-1,"Python Backend Developer
+SquareOne
+Kategoria:
+Backend
+, 
+Python
+Senior
+Praca zdalna
+Gdynia, Warsaw, Cracow, Gdańsk
++1
+Oferta ważna do: 17.01.2026 (zostało 39 dni)
+Obowiązkowe
+Python
+PySpark
+Cloud
+AI
+Data engineering
+Data science
+Machine Learning
+Storage
+Spark
+Prototyping
+UNITY
+Databricks
+Hive
+Audit
+Communication skills
+Angielski (B2)
+Mile widziane
+Degree
+Opis wymagań
+Your profile:
+Expert level knowledge of Python, with 2+ years of production PySpark experience;
+1+ years of hands-on architecture experience on Databricks, with deep understanding of Unity Catalog and Hive megastore;
+3+ years of technical leadership experience, driving engineering strategy and team delivery;
+Proven experience leading enterprise-scale data platform migrations, strong background in distributed system design handling petabyte-scale data;
+Solid understanding of data governance, compliance, and audit requirements;
+Experience designing robust APIs and integration patterns for enterprise environments;
+Passion for defensive programming and building scalable, reliable software;
+Excellent written and verbal communication skills, able to lead cross-functional collaboration;
+Strong problem-solving skills, strategic thinking, and decision-making under ambiguity;
+Good verbal and written communication skills in English (min B2);
+Availability tow ork with US East Coast time zone;
+Nice-to-have:
+Experience as a Staff or Principal Engineer at a major technology company;
+ Contributions to open-source data platforms;
+Experience working directly with large enterprise customers in a sales engineering context;
+Degree in Computer Science, Engineering, or a related technical field (or equivalent practical experience)
+Zakres obowiązków
+Oryginalny tekst. 
+Pokaż tłumaczenie
+Defining and evolving the technical roadmap for UCX migration workflows and platform architecture;
+Driving key architectural decisions and ensuring consistency across storage, compute, and governance layers;
+Leading the design and implementation of complex migration features and data workflows;
+Optimizing Spark workloads and ensuring performance, reliability, and scalability of the platform;
+Mentoring engineers, setting coding standards, and promoting best engineering practices;
+Researching and prototyping new migration capabilities and Unity Catalog integrations;
+Szczegóły oferty
+Rekrutacja online
+Start ASAP
+Praca w pełni zdalna
+O firmie SquareOneResources
+Utworzona w:
+1996
+Wielkość firmy:
+40+
+Siedziba:
+Warszawa
+#OneSquareOne - one team, many talents
+
+At Square One Poland, we go to the place that no other recruitment agency has reached so far - straight into the orbit of transparency and win-win actions. We are a companion, guardian, and support - on every way of the recruitment journey. 
+
+We provide IT specialists with unlimited development opportunities - with inspiring projects, with modern technologies. What is important to us is the culture of honesty and reliable information about career opportunities. 
+
+We are a specialized team operating on an international scale and in our daily work we don’t forget about creativity, agility, and flexibility. Despite many years of experience, we still have a start-up DNA, and this is our advantage.
+
+We are Great Place to Work 2025 certified. 
+20 000 – 23 500 PLN
++ VAT (B2B) miesięcznie 
+oblicz ""na rękę""
+Aplikuj
+Zapisz ofertę
+Analiza CV
+BETA
+Oceń tę ofertę
+😫
+🙁
+😐
+🙂
+😃
+ZOBACZ PODOBNE OFERTY
+Senior Python Backend Principal (Remote)
+Sprawdź wynagrodzenie
+Backend
+Python
+PySpark
+Databricks
+Antal
+Zdalnie
+Python Developer
+23 520 – 28 560 PLN
+Backend
+Python
+PySpark
+Databricks
+AVENGA (Agencja Pracy, nr KRAZ: 8448)
+Zdalnie
+NOWA
+Senior/Principal Python Developer
+23 000 – 31 000 PLN
+Backend
+Python
+PySpark
+Spark
+Xebia sp. z o.o.
+Zdalnie
+ +4
+Python Developer
+16 800 – 20 160 PLN
+Backend
+Python
+SQL
+Teradata
+Devire
+Zdalnie
+Senior Python Engineer - team extension project
+5 880 – 6 720 USD
+Backend
+Python
+AI
+SQL
+Netguru
+Zdalnie
+Senior Backend Engineer (Python)
+7 000 – 7 300 USD
+Backend
+Python
+AI
+AWS
+Adaptiq
+Zdalnie
+NOWA
+Senior Backend Developer (Python)
+30 000 PLN
+Backend
+Python
+Django
+PostgreSQL
+Vatix
+Kraków
+NOWA
+Senior Python Developer - Remote
+23 000 – 26 000 PLN
+Backend
+Python
+Django
+Flask
+Link Group
+Zdalnie
+Senior Python Developer
+39 000 – 46 000 PLN
+Backend
+Python
+Server-side Python
+OOP
+Link Group
+Warszawa
+Python Software Developer
+18 000 – 22 000 PLN
+Backend
+Python
+pytest
+REST API
+Silvair
+Kraków
+NOWA",NoFluffJobs
