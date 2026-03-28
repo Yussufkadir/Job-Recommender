@@ -9,3 +9,7 @@ ml_services/recommender_service/transformer-models
 datasets/*.spacy
 datasets/*.bin
 datasets/*.csv
+datasets/NER_ready_data
+datasets/models
+datasets/*.conll
+datasets/*.json
