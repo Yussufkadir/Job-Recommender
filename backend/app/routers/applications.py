@@ -29,7 +29,7 @@ def create_application(
     invalidate_user_application_summary(current_user.id)
     return app
 
-@router.create("/{application_id}", response_model=ApplicationOut)
+@router.get("/{application_id}", response_model=ApplicationOut)
 def get_application(
     application_id: int,
     db: Session = Depends(get_db),
@@ -42,6 +42,14 @@ def get_application(
         raise HTTPException(status_code=403, detail="Forbidden")
     return app
 
+@router.get("", response_model=list[ApplicationOut])
+def get_all_applications(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    apps = db.query(JobApplication).filter(JobApplication.user_id == current_user.id).order_by(JobApplication.updated_at.desc()).all()
+    return apps
+
 @router.patch("/{application_id}", response_model=ApplicationOut)
 def patch_application(
     application_id: int,
@@ -49,7 +57,7 @@ def patch_application(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user),
 ):
-    app = db.query(JobApplication).filer(JobApplication.id == application_id).first()
+    app = db.query(JobApplication).filter(JobApplication.id == application_id).first()
     if not app:
         raise HTTPException(status_code=404, detail="Application not found.")
     if app.user_id != current_user.id:
