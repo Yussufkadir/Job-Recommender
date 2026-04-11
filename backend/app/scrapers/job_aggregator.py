@@ -23,7 +23,6 @@ class JobAggregator():
             adzuna_list = df_adzuna.to_dict("records")
             all_jobs.extend(adzuna_list)
 
-
         if os.getenv("RENDER") == "true":
             print("Skipping NoFluffScraper on Render to prevent Memory Limit Exceeded (Chrome takes > 500MB)")
         else:

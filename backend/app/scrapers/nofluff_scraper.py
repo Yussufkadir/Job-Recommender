@@ -18,15 +18,10 @@ class NoFluffScrapper:
         if seniority and seniority.lower() != "all":
             final_query = f"{seniority} {query}"
         
+        driver = webdriver.Chrome(options=self.options)
         jobs_data = []
 
         print(f"Scrapper searching for {final_query}...")
-
-        try:
-            driver = webdriver.Chrome(options=self.options)
-        except Exception as e:
-            print(f"Failed to initialize Chrome driver: {e}")
-            return jobs_data
 
         try:
             url = f"https://nofluffjobs.com/pl/jobs?criteria=keyword%3D'{final_query}'"
