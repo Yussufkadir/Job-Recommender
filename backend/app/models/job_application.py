@@ -1,14 +1,12 @@
 from enum import Enum as PyEnum
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String, Text, func
-from sqlalchemy.orm import declarative_base
-
-Base = declarative_base()
+from app.core.database import Base
 
 class ApplicationStatus(str, PyEnum):
-    SAVED = "saved",
-    APPLIED = "applied",
-    INTERVIEW = "interview",
-    OFFER = "offer",
+    SAVED = "saved"
+    APPLIED = "applied"
+    INTERVIEW = "interview"
+    OFFER = "offer"
     REJECTED = "rejected"
 
 class JobApplication(Base):
