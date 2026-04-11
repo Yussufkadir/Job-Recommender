@@ -3,9 +3,9 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from app.core.database import engine, Base
-from app.models import user
+from app.models import user, job_application
 import os
-from app.routers import auth, cv_tailor, jobs, analytics
+from app.routers import auth, cv_tailor, jobs, analytics, applications
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -52,6 +52,7 @@ app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(cv_tailor.router, prefix="/api", tags=["CV Tailoring"])
 app.include_router(jobs.router, prefix="/api/jobs", tags=["Jobs"])
 app.include_router(analytics.router, prefix="/graph", tags=["Knowledge Graph"])
+app.include_router(applications.router, prefix="/api/applications", tags=["Application"])
 
 @app.get("/")
 async def root():
