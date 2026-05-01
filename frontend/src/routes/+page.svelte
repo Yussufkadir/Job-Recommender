@@ -27,14 +27,6 @@
 		display: flex;
 		gap: 1rem;
 		z-index: 100;
-		.nav-overlay {
-			position: fixed;
-			top: 1.5rem;
-			right: 2rem;
-			display: flex;
-			gap: 1rem;
-			z-index: 100;
-		}
 	}
 
 	.cta-button {
