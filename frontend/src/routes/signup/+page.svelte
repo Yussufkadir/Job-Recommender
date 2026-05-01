@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { API_BASE } from '$lib/api';
+	import { setToken } from '$lib/auth';
 
 	const authProviders = [
 		{ name: 'Gmail', key: 'gmail', icon: '✉️' },
@@ -46,7 +47,7 @@
 
 			if (loginRes.ok) {
 				const loginData = await loginRes.json();
-				localStorage.setItem('token', loginData.access_token);
+				setToken(loginData.access_token);
 				goto('/main_page');
 			} else {
 				goto('/login');
