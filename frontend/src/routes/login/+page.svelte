@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { API_BASE } from '$lib/api';
 	import { setToken } from '$lib/auth';
 
@@ -26,7 +27,7 @@
 				console.log('Login OK, setting token...');
 				setToken(data.access_token);
 				console.log('Token set, navigating to /main_page...');
-				window.location.href = '/main_page';
+				goto('/main_page');
 			} else {
 				console.log('Login failed:', data.detail);
 				errorMessage = data.detail || 'Login Failed';
@@ -217,29 +218,5 @@
 		margin: 0;
 		color: #595a5d;
 		font-size: 0.9rem;
-	}
-
-	.social-buttons {
-		display: flex;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-		justify-content: center;
-	}
-
-	.social-button {
-		border-radius: 0.85rem;
-		border: 1px solid rgba(148, 163, 184, 0.4);
-		background: rgb(246, 246, 246);
-		color: #000000;
-		padding: 0.6rem 1.2rem;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.45rem;
-		font-weight: 600;
-		cursor: pointer;
-	}
-
-	.social-button span {
-		font-size: 1.1rem;
 	}
 </style>

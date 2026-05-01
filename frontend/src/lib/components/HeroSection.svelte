@@ -61,8 +61,7 @@
 		flex-wrap: wrap;
 	}
 
-	.cta,
-	.secondary {
+	.cta {
 		border-radius: 999px;
 		padding: 0.85rem 1.75rem;
 		font-weight: 600;
@@ -76,25 +75,8 @@
 		color: white;
 		box-shadow: 0 20px 40px rgba(99, 102, 241, 0.35);
 	}
-
-	.secondary {
-		background: transparent;
-		border: 1px solid rgba(9, 59, 211, 0.781);
-		color: inherit;
-	}
-
-	.cta:hover,
-	.secondary:hover {
+	.cta:hover {
 		opacity: 0.9;
-	}
-
-	.stats {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-		gap: 1rem;
 	}
 
 	@media (max-width: 600px) {
