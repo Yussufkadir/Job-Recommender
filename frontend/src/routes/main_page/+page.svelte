@@ -1,553 +1,583 @@
 <script lang="ts">
-	import { API_BASE, getRecommendations, type Job } from '$lib/api';
-	import { authFetch } from '$lib/auth';
+	import { onMount } from 'svelte';
+	import AppShell from '$lib/components/AppShell.svelte';
+	import { getApplications } from '$lib/api/applications';
+	import type { Application, ApplicationStatus } from '$lib/types/application';
 
-	let cvText = '';
-	let skillsInput = '';
-	let seniorityLevel = 'All';
-	let query = '';
-	let jobs: Job[] = [];
-	let loading = false;
+	type StatusSummary = {
+		status: ApplicationStatus;
+		label: string;
+		description: string;
+	};
+
+	const statusSummaries: StatusSummary[] = [
+		{ status: 'saved', label: 'Saved', description: 'Interesting roles you may come back to.' },
+		{ status: 'applied', label: 'Applied', description: 'Applications already sent out.' },
+		{ status: 'interview', label: 'Interview', description: 'Conversations in progress.' },
+		{ status: 'offer', label: 'Offer', description: 'Opportunities close to the finish line.' },
+		{ status: 'rejected', label: 'Rejected', description: 'Closed loops you can learn from.' }
+	];
+
+	let applications: Application[] = [];
+	let loading = true;
 	let error = '';
-	let cvFile: File | null = null;
-	let tailoringJobId: string | null = null;
-	let tailoredResults: Record<string, string> = {};
 
-	async function handleFileSelect(event: Event) {
-		const target = event.target as HTMLInputElement;
-		if (target.files && target.files.length > 0) {
-			cvFile = target.files[0];
-
-			const formData = new FormData();
-			formData.append('file', cvFile);
-
-			cvText = 'Extracting text from file...';
-			skillsInput = 'Extracting...';
-
-			try {
-				const res = await authFetch(`${API_BASE}/api/parse_cv`, {
-					method: 'POST',
-					body: formData
-				});
-
-				if (res.ok) {
-					const data = await res.json();
-					cvText = data.text;
-
-					if (data.skills && data.skills.length > 0) {
-						skillsInput = data.skills.join(', ');
-					} else {
-						skillsInput = '';
-					}
-				} else {
-					cvText = '';
-					alert('failed to read file text.');
-				}
-			} catch (e) {
-				console.error(e);
-				cvText = '';
-				alert('Error parsing file.');
-			}
-		}
-	}
-
-	async function handleSearch() {
-		if (!cvText && !skillsInput) {
-			error = 'Please fill in both CV content and Skills.';
-			return;
-		}
-
-		if (!query) {
-			error = 'Please enter a job title to find a relevant job.';
-			return;
-		}
-
+	async function loadDashboard() {
 		loading = true;
 		error = '';
-		jobs = [];
-
-		const skillsArray = skillsInput
-			.split(',')
-			.map((s) => s.trim())
-			.filter((s) => s.length > 0);
 
 		try {
-			const response = await getRecommendations(cvText, query, skillsArray, seniorityLevel);
-			jobs = response.jobs;
+			applications = await getApplications();
 		} catch (err) {
 			console.error(err);
-			error = 'Failed to fetch jobs. Check the backend.';
+			error = 'Could not load your application summary just now.';
 		} finally {
 			loading = false;
 		}
 	}
 
-	async function handleTailorCV(job: Job) {
-		if (!cvFile) {
-			alert('Please upload a CV file (PDF/DOCX) in the top section first.');
-			return;
-		}
-
-		tailoringJobId = job.title;
-
-		try {
-			const formData = new FormData();
-			formData.append('file', cvFile);
-			formData.append('job_description', job.description);
-
-			const res = await authFetch(`${API_BASE}/api/cv_tailor`, {
-				method: 'POST',
-				body: formData
-			});
-
-			if (res.ok) {
-				const data = await res.json();
-				tailoredResults[job.title] = data.tailored_cv;
-			} else {
-				const err = await res.json();
-				alert('tailoring of CV is failed: ' + (err.detail || 'Unknown error'));
-			}
-		} catch (e) {
-			console.error(e);
-			alert('Error connecting to the server.');
-		} finally {
-			tailoringJobId = null;
-		}
+	function formatDate(value: string) {
+		return new Intl.DateTimeFormat('en', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric'
+		}).format(new Date(value));
 	}
 
-	async function downloadPDF(text: string) {
-		try {
-			const res = await authFetch(`${API_BASE}/api/download_pdf`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ text: text })
-			});
+	onMount(loadDashboard);
 
-			if (res.ok) {
-				const blob = await res.blob();
-				const url = window.URL.createObjectURL(blob);
-				const a = document.createElement('a');
-				a.href = url;
-				a.download = 'Tailored_CV.pdf';
-				document.body.appendChild(a);
-				a.click();
+	$: totalApplications = applications.length;
+	$: activePipeline = applications.filter((app) =>
+		['saved', 'applied', 'interview', 'offer'].includes(app.status)
+	).length;
+	$: positiveMomentum = applications.filter((app) =>
+		['interview', 'offer'].includes(app.status)
+	).length;
+	$: conversionRate = totalApplications
+		? Math.round(
+				(applications.filter((app) => app.status !== 'saved').length / totalApplications) * 100
+			)
+		: 0;
+	$: latestActivity = applications[0]?.updated_at ?? null;
+	$: recentApplications = applications.slice(0, 5);
+	$: statusCards = statusSummaries.map((summary) => {
+		const count = applications.filter((app) => app.status === summary.status).length;
 
-				window.URL.revokeObjectURL(url);
-				document.body.removeChild(a);
-			} else {
-				alert('Failed to generate PDF');
-			}
-		} catch (e) {
-			console.error(e);
-			alert('Error downloading PDF');
-		}
-	}
-
-	function formatMarkdown(text: string) {
-		if (!text) return '';
-		return text
-			.replace(/\n/g, '<br>')
-			.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-			.replace(/- (.*?)(<br>|$)/g, '• $1$2');
-	}
+		return {
+			...summary,
+			count,
+			share: totalApplications ? Math.round((count / totalApplications) * 100) : 0
+		};
+	});
 </script>
 
 <svelte:head>
-	<title>Main Page</title>
+	<title>Overview | Job Recommender</title>
 </svelte:head>
 
-<div class="page-container">
-	<section class="input-section">
-		<div class="glass-card">
-			<h1>Job Recommender</h1>
-			<p class="subtitle">Upload your CV and skills to find the jobs that fit you.</p>
+<AppShell
+	eyebrow="Main Hub"
+	heading="See the full picture before you dive into the next task."
+	subheading="This overview gives you one place for pipeline stats, recent activity, and shortcuts into the parts of the product that do the real work."
+>
+	<section class="hero-grid">
+		<article class="hero-card spotlight">
+			<div class="hero-copy">
+				<p class="kicker">Today&apos;s focus</p>
+				<h3>Run the app like a workspace, not a single page.</h3>
+				<p>
+					Start from a summary here, jump into job search when you want fresh leads, and keep
+					tracker updates flowing in one connected rhythm.
+				</p>
+			</div>
 
-			<div class="form-group">
-				<label for="cv-upload">Upload CV (PDF/DOCX)</label>
-				<div class="file-upload-wrapper">
-					<input
-						id="cv-upload"
-						type="file"
-						accept=".pdf,.docx"
-						on:change={handleFileSelect}
-						class="file-input"
-					/>
-					<div class="file-display">
-						<span class="icon">📄</span>
-						<span class="filename">{cvFile ? cvFile.name : 'Choose a file...'}</span>
-					</div>
+			<div class="hero-actions">
+				<a href="/job_search" class="primary-action">Open job search</a>
+				<a href="/tracker" class="secondary-action">Review tracker</a>
+			</div>
+		</article>
+
+		<article class="hero-card stats">
+			<div class="stat-tile">
+				<span>Total tracked</span>
+				<strong>{loading ? '...' : totalApplications}</strong>
+				<small>Applications currently in your workspace.</small>
+			</div>
+			<div class="stat-tile">
+				<span>Active pipeline</span>
+				<strong>{loading ? '...' : activePipeline}</strong>
+				<small>Saved, applied, interview, and offer stages combined.</small>
+			</div>
+			<div class="stat-tile">
+				<span>Interview momentum</span>
+				<strong>{loading ? '...' : positiveMomentum}</strong>
+				<small>Roles already moving into interviews or offers.</small>
+			</div>
+			<div class="stat-tile">
+				<span>Action rate</span>
+				<strong>{loading ? '...' : `${conversionRate}%`}</strong>
+				<small>Tracked roles that moved beyond the saved stage.</small>
+			</div>
+		</article>
+	</section>
+
+	<section class="dashboard-grid">
+		<article class="panel">
+			<div class="section-head">
+				<div>
+					<p class="section-kicker">Status snapshot</p>
+					<h3>Pipeline breakdown</h3>
+				</div>
+				{#if latestActivity}
+					<span class="section-note">Last activity: {formatDate(latestActivity)}</span>
+				{/if}
+			</div>
+
+			{#if loading}
+				<p class="state-copy">Loading your application stats...</p>
+			{:else if error}
+				<p class="state-copy error">{error}</p>
+			{:else if totalApplications === 0}
+				<div class="empty-panel">
+					<h4>No application history yet</h4>
+					<p>
+						Once you start tracking roles, this page will turn into your command center for
+						progress, follow-ups, and momentum.
+					</p>
+					<a href="/job_search" class="secondary-action">Search your first role</a>
+				</div>
+			{:else}
+				<div class="status-grid">
+					{#each statusCards as card}
+						<div class="status-card">
+							<div class="status-card-head">
+								<div>
+									<h4>{card.label}</h4>
+									<p>{card.description}</p>
+								</div>
+								<strong>{card.count}</strong>
+							</div>
+							<div class="progress-track">
+								<div class="progress-bar" style={`width: ${card.share}%`}></div>
+							</div>
+							<span class="progress-label">{card.share}% of your tracked roles</span>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</article>
+
+		<article class="panel">
+			<div class="section-head">
+				<div>
+					<p class="section-kicker">Quick actions</p>
+					<h3>Pick your next move</h3>
 				</div>
 			</div>
 
-			<div class="form-group">
-				<label for="cv">CV Content (for search)</label>
-				<textarea id="cv" bind:value={cvText} placeholder="Paste your CV text here..." rows="4"
-				></textarea>
-			</div>
-
-			<div class="form-group">
-				<label for="job-title">Job Title</label>
-				<input
-					id="job-title"
-					type="text"
-					bind:value={query}
-					placeholder="e.g. Software Engineer, Data Scientist"
-				/>
-			</div>
-
-			<div class="form-group">
-				<label for="skills">Skills (comma seperated)</label>
-				<input
-					id="skills"
-					type="text"
-					bind:value={skillsInput}
-					placeholder="e.g. Python, React, SQL"
-				/>
-			</div>
-
-			<div class="form-group">
-				<label for="seniority">Seniority Level</label>
-				<select id="seniority" bind:value={seniorityLevel}>
-					<option value="All">All Levels</option>
-					<option value="Intern">Intern/Trainee</option>
-					<option value="Junior">Junior</option>
-					<option value="Mid">Mid</option>
-					<option value="Seniority">Senior</option>
-				</select>
-			</div>
-
-			{#if error}
-				<p class="error-msg">{error}</p>
-			{/if}
-
-			<button class="search-btn" on:click={handleSearch} disabled={loading}>
-				{#if loading}
-					<span class="loader"></span> Searching...
-				{:else}
-					Find Matches
-				{/if}
-			</button>
-		</div>
-	</section>
-
-	<section class="results-section">
-		{#if jobs.length > 0}
-			<h2>Top Recommendations</h2>
-			<div class="jobs-grid">
-				{#each jobs as job}
-					<div class="job-card">
-						<div class="job-header">
-							<h3>{job.title}</h3>
-							<span
-								class="score-badge"
-								style="background: {job.match_score > 70 ? '#10b981' : '#f59e0b'}"
-							>
-								{job.match_score}% Match
-							</span>
-						</div>
-						<p class="company">{job.company} * {job.location}</p>
-						<p class="description">{job.description.slice(0, 150)}...</p>
-
-						<div class="actions">
-							<a href={job.link} target="_blank" class="apply-link">View Job</a>
-							<button
-								class="tailor-btn"
-								on:click={() => handleTailorCV(job)}
-								disabled={tailoringJobId === job.title}
-							>
-								{tailoringJobId === job.title ? 'Processing...' : 'Tailor CV'}
-							</button>
-						</div>
-						{#if tailoredResults[job.title]}
-							<div class="tailored-result">
-								<div
-									style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"
-								>
-									<h4>AI Suggestions</h4>
-									<button
-										class="download-btn"
-										on:click={() => downloadPDF(tailoredResults[job.title])}
-										style="background:#10b981; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;"
-									>
-										📥 Download PDF
-									</button>
-								</div>
-								<div class="markdown-content">
-									{@html formatMarkdown(tailoredResults[job.title])}
-								</div>
-							</div>
-						{/if}
+			<div class="action-stack">
+				<a class="action-card" href="/job_search">
+					<span class="action-index">01</span>
+					<div>
+						<h4>Search and tailor jobs</h4>
+						<p>Upload a CV, refine the target role, and generate better-fit recommendations.</p>
 					</div>
-				{/each}
+				</a>
+
+				<a class="action-card" href="/tracker">
+					<span class="action-index">02</span>
+					<div>
+						<h4>Keep applications current</h4>
+						<p>Update role status, refresh priorities, and keep the pipeline from getting stale.</p>
+					</div>
+				</a>
+
+				<div class="action-card muted">
+					<span class="action-index">03</span>
+					<div>
+						<h4>Prepare for future modules</h4>
+						<p>
+							This overview is now ready to grow with more tools, stats, and workflows as the
+							product expands.
+						</p>
+					</div>
+				</div>
 			</div>
-		{:else if !loading && !error}
-			<div class="empty-state">
-				<p>Jobs will appear here after you search.</p>
+		</article>
+
+		<article class="panel full-width">
+			<div class="section-head">
+				<div>
+					<p class="section-kicker">Recent activity</p>
+					<h3>Most recently updated applications</h3>
+				</div>
 			</div>
-		{/if}
+
+			{#if loading}
+				<p class="state-copy">Pulling in the latest activity...</p>
+			{:else if error}
+				<p class="state-copy error">{error}</p>
+			{:else if recentApplications.length === 0}
+				<p class="state-copy">
+					No recent activity yet. As soon as you save or update roles, they will appear here.
+				</p>
+			{:else}
+				<div class="recent-list">
+					{#each recentApplications as application}
+						<div class="recent-row">
+							<div>
+								<h4>{application.job_title}</h4>
+								<p>{application.company}</p>
+							</div>
+							<div class="recent-meta">
+								<span class={`status-pill ${application.status}`}>{application.status}</span>
+								<span>{formatDate(application.updated_at)}</span>
+							</div>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</article>
 	</section>
-</div>
+</AppShell>
 
 <style>
-	.page-container {
-		display: flex;
-		min-height: 100vh;
-		padding: 2rem;
-		gap: 2rem;
-		max-width: 1400px;
-		margin: 0 auto;
-	}
-
-	.input-section {
-		flex: 1;
-		max-width: 450px;
-	}
-
-	.glass-card {
-		background: rgb(255, 255, 255);
-		backdrop-filter: blur(10px);
-		border: 1px solid rgba(142, 141, 141, 0.611);
-		padding: 2rem;
-		border-radius: 16px;
-		box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-	}
-
-	h1 {
-		margin-top: 0;
-		font-size: 1.8rem;
-		background: linear-gradient(90deg, #0f21c0, #0f21c0);
-		-webkit-background-clip: text;
-		background-clip: text;
-		-webkit-text-fill-color: transparent;
-		color: transparent;
-	}
-	.subtitle {
-		color: #4b4e51;
-		margin-bottom: 1.5rem;
-		font-size: 0.9rem;
-	}
-
-	.form-group {
-		margin-bottom: 1.5rem;
-	}
-	label {
-		display: block;
-		margin-bottom: 0.5rem;
-		font-weight: 500;
-		color: #0b0b0b;
-	}
-
-	.file-upload-wrapper {
-		position: relative;
-		overflow: hidden;
-		border: 2px dashed #092da5;
-		border-radius: 8px;
-		transition: border-color 0.2s;
-		background: rgba(83, 82, 82, 0.788);
-	}
-
-	.file-upload-wrapper:hover {
-		border-color: #2563eb;
-		background: rgba(99, 102, 241, 0.1);
-	}
-
-	.file-input {
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		opacity: 0;
-		cursor: pointer;
-	}
-
-	.file-display {
-		padding: 1rem;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		color: #1a1a1a;
-		justify-content: center;
-	}
-	.icon {
-		font-size: 1.2rem;
-	}
-
-	textarea,
-	input {
-		width: 100%;
-		background: rgba(188, 186, 186, 0.722);
-		border: 1px solid #878c92;
-		border-radius: 8px;
-		padding: 0.75rem;
-		color: rgb(17, 17, 17);
-		font-family: inherit;
-		box-sizing: border-box;
-	}
-
-	textarea:focus,
-	input:focus {
-		outline: 2px solid #171ac3;
-		border-color: transparent;
-	}
-
-	select {
-		width: 100%;
-		background: rgba(255, 254, 254, 0.3);
-		border: 1px solid #878c92;
-		border-radius: 8px;
-		padding: 0.75rem;
-		color: rgb(17, 17, 17);
-		font-family: inherit;
-		box-sizing: border-box;
-		cursor: pointer;
-	}
-
-	select:focus {
-		outline: 2px solid #171ac3;
-		border-color: transparent;
-	}
-
-	option {
-		background-color: #1e293b;
-		color: white;
-	}
-
-	.search-btn {
-		width: 100%;
-		padding: 1rem;
-		background: #2563eb;
-		color: white;
-		border: none;
-		border-radius: 8px;
-		font-weight: 600;
-		cursor: pointer;
-		transition: background 0.2s;
-	}
-
-	.search-btn:hover {
-		background: #1b12c9;
-	}
-
-	.search-btn:disabled {
-		background: #e4e5e7;
-		cursor: not-allowed;
-	}
-
-	.error-msg {
-		color: #ef4444;
-		font-size: 0.9rem;
-		margin-bottom: 1rem;
-	}
-
-	.results-section {
-		flex: 2;
-		overflow-y: auto;
-	}
-
-	.jobs-grid {
+	.hero-grid,
+	.dashboard-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-		gap: 1.5rem;
+		gap: 1.25rem;
 	}
 
-	.job-card {
-		background: rgb(255, 255, 255);
-		border: 1px solid #7d7e81;
-		border-radius: 12px;
-		padding: 1.5rem;
-		transition: transform 0.2s;
+	.hero-grid {
+		grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+		margin-bottom: 1.25rem;
 	}
 
-	.job-card:hover {
-		transform: translateY(-4px);
-		border-color: #1114ca;
+	.dashboard-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 
-	.job-header {
+	.hero-card,
+	.panel {
+		border: 1px solid rgba(136, 158, 182, 0.25);
+		border-radius: 1.8rem;
+		background: rgba(250, 252, 255, 0.88);
+		box-shadow: 0 24px 45px rgba(31, 51, 84, 0.08);
+		backdrop-filter: blur(18px);
+	}
+
+	.hero-card {
+		padding: 1.6rem;
+	}
+
+	.spotlight {
 		display: flex;
+		flex-direction: column;
 		justify-content: space-between;
-		align-items: start;
-		margin-bottom: 0.5rem;
+		gap: 2rem;
+		background: linear-gradient(135deg, rgba(18, 52, 96, 0.98), rgba(34, 82, 153, 0.95)), #143b6b;
+		color: #f7fbff;
 	}
 
-	.job-header h3 {
-		margin: 0;
-		font-size: 1.1rem;
-		color: #111213;
-	}
-
-	.score-badge {
-		font-size: 0.75rem;
-		padding: 0.25rem 0.5rem;
-		border-radius: 99px;
-		color: #020617;
+	.kicker,
+	.section-kicker {
+		margin: 0 0 0.45rem;
+		text-transform: uppercase;
+		letter-spacing: 0.12em;
+		font-size: 0.76rem;
 		font-weight: 700;
+		color: #7b98bb;
 	}
 
-	.company {
-		color: #7c848f91;
-		font-size: 0.9rem;
-		margin-bottom: 1rem;
+	.spotlight .kicker {
+		color: rgba(205, 224, 255, 0.86);
 	}
 
-	.description {
-		color: #cbd5e1;
-		font-size: 0.9rem;
-		line-height: 1.5;
-		margin-bottom: 1.5rem;
+	.hero-copy h3,
+	.section-head h3,
+	.status-card h4,
+	.action-card h4,
+	.empty-panel h4,
+	.recent-row h4 {
+		margin: 0;
+		color: inherit;
 	}
 
-	.actions {
+	.hero-copy h3 {
+		font-size: clamp(1.7rem, 3vw, 2.6rem);
+		line-height: 1.08;
+		max-width: 11ch;
+		margin-bottom: 0.9rem;
+	}
+
+	.hero-copy p {
+		margin: 0;
+		max-width: 34rem;
+		line-height: 1.7;
+		color: inherit;
+	}
+
+	.hero-actions {
 		display: flex;
+		flex-wrap: wrap;
+		gap: 0.85rem;
+	}
+
+	.primary-action,
+	.secondary-action {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.85rem 1.25rem;
+		border-radius: 999px;
+		font-weight: 700;
+		text-decoration: none;
+		transition:
+			transform 0.2s ease,
+			box-shadow 0.2s ease;
+	}
+
+	.primary-action:hover,
+	.secondary-action:hover {
+		transform: translateY(-1px);
+	}
+
+	.primary-action {
+		color: #143b6b;
+		background: #f8fbff;
+		box-shadow: 0 16px 26px rgba(8, 20, 43, 0.22);
+	}
+
+	.secondary-action {
+		color: #224c85;
+		background: rgba(255, 255, 255, 0.78);
+		border: 1px solid rgba(117, 146, 181, 0.25);
+	}
+
+	.stats {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 1rem;
 	}
 
-	.apply-link {
-		flex: 1;
-		text-align: center;
-		padding: 0.5rem;
-		border: 1px solid #072f9b;
-		border-radius: 6px;
-		color: blue;
-		text-decoration: none;
-		font-size: 0.9rem;
+	.stat-tile {
+		padding: 1.1rem;
+		border-radius: 1.3rem;
+		background: rgba(244, 248, 252, 0.88);
+		border: 1px solid rgba(204, 218, 232, 0.7);
 	}
 
-	.apply-link:hover {
-		background: #0a28bd;
+	.stat-tile span,
+	.progress-label,
+	.section-note,
+	.recent-row p,
+	.action-card p,
+	.status-card p,
+	.empty-panel p,
+	.state-copy,
+	.stat-tile small {
+		color: #5b7188;
 	}
 
-	.tailor-btn {
-		flex: 1;
-		background: rgba(24, 28, 245, 0.2);
-		color: #1d30d7;
-		border: 1px solid rgba(24, 28, 245, 0.3);
-		border-radius: 6px;
-		cursor: pointer;
-		font-weight: 600;
+	.stat-tile span {
+		display: block;
+		font-size: 0.82rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		margin-bottom: 0.6rem;
 	}
 
-	.tailor-btn:hover {
-		background: rgba(24, 28, 245, 0.3);
+	.stat-tile strong {
+		display: block;
+		margin-bottom: 0.35rem;
+		font-size: 2rem;
+		line-height: 1;
+		color: #173557;
 	}
 
-	.empty-state {
-		height: 100%;
+	.panel {
+		padding: 1.4rem;
+	}
+
+	.full-width {
+		grid-column: 1 / -1;
+	}
+
+	.section-head {
 		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 1rem;
+		margin-bottom: 1rem;
+	}
+
+	.status-grid,
+	.action-stack,
+	.recent-list {
+		display: grid;
+		gap: 0.95rem;
+	}
+
+	.status-card,
+	.action-card,
+	.recent-row,
+	.empty-panel {
+		border-radius: 1.35rem;
+		padding: 1rem 1.05rem;
+		background: rgba(255, 255, 255, 0.85);
+		border: 1px solid rgba(208, 219, 231, 0.75);
+	}
+
+	.status-card-head,
+	.recent-row,
+	.recent-meta {
+		display: flex;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.status-card-head strong {
+		font-size: 1.7rem;
+		color: #173557;
+	}
+
+	.progress-track {
+		margin-top: 0.9rem;
+		height: 0.55rem;
+		border-radius: 999px;
+		background: #dfe8f1;
+		overflow: hidden;
+	}
+
+	.progress-bar {
+		height: 100%;
+		border-radius: inherit;
+		background: linear-gradient(90deg, #2563eb, #16a34a);
+	}
+
+	.action-card {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: 1rem;
+		text-decoration: none;
+		color: #173557;
+	}
+
+	.action-card.muted {
+		background: linear-gradient(135deg, rgba(232, 239, 247, 0.9), rgba(244, 248, 252, 0.9));
+	}
+
+	.action-index {
+		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		color: #64748b;
-		border: 2px dashed #334155;
-		border-radius: 16px;
+		width: 2.6rem;
+		height: 2.6rem;
+		border-radius: 0.95rem;
+		background: #143b6b;
+		color: #f7fbff;
+		font-weight: 800;
 	}
 
-	@media (max-width: 768px) {
-		.page-container {
+	.empty-panel {
+		display: grid;
+		gap: 0.8rem;
+	}
+
+	.recent-row h4 {
+		margin-bottom: 0.25rem;
+	}
+
+	.recent-row p {
+		margin: 0;
+	}
+
+	.recent-meta {
+		align-items: center;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		font-size: 0.92rem;
+	}
+
+	.status-pill {
+		padding: 0.45rem 0.8rem;
+		border-radius: 999px;
+		font-size: 0.8rem;
+		font-weight: 700;
+		text-transform: capitalize;
+	}
+
+	.status-pill.saved {
+		background: #e4eef8;
+		color: #234d82;
+	}
+
+	.status-pill.applied {
+		background: #e8f4e7;
+		color: #22603b;
+	}
+
+	.status-pill.interview {
+		background: #fff2d9;
+		color: #8b5a14;
+	}
+
+	.status-pill.offer {
+		background: #e5f8f0;
+		color: #0f6a53;
+	}
+
+	.status-pill.rejected {
+		background: #fce7e7;
+		color: #9b2c2c;
+	}
+
+	.error {
+		color: #b42318;
+	}
+
+	@media (max-width: 980px) {
+		.hero-grid,
+		.dashboard-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.full-width {
+			grid-column: auto;
+		}
+
+		.hero-copy h3 {
+			max-width: none;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.hero-card,
+		.panel {
+			padding: 1.1rem;
+			border-radius: 1.35rem;
+		}
+
+		.stats {
+			grid-template-columns: 1fr;
+		}
+
+		.section-head,
+		.status-card-head,
+		.recent-row,
+		.recent-meta {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+
+		.hero-actions {
 			flex-direction: column;
 		}
-		.input-section {
-			max-width: 100%;
+
+		.primary-action,
+		.secondary-action {
+			width: 100%;
 		}
 	}
 </style>
