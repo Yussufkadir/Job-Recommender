@@ -13,3 +13,28 @@ datasets/NER_ready_data
 datasets/models
 datasets/*.conll
 datasets/*.json
+
+__pycache__/
+*.py[cod]
+*.pyc 
+*.pyo
+*.pyd
+
+echo "__pycache__/" >> .gitignore
+echo "*.pyc" >> .gitignore
+echo "*.pyo" >> .gitignore
+
+.DS_Store
+Thumbs.db
+
+node_modules/
+.svelte-kit/
+
+.env
+*.env.local
+
+venv/
+env/
+.venv/
+*/venv/
+*/env/
