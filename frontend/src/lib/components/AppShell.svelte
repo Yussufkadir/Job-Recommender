@@ -12,6 +12,7 @@
 	const navItems = [
 		{ href: '/main_page', label: 'Overview' },
 		{ href: '/job_search', label: 'Job Search' },
+		{ href: '/cv_builder', label: 'CV Builder' },
 		{ href: '/tracker', label: 'Tracker' }
 	];
 

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Any, Union
+import hashlib
 import re
 from jose import jwt, JWTError
 from passlib.context import CryptContext
@@ -8,6 +9,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
+from app.models.user import RevokedToken, User
 
 pwd_context = CryptContext(
     schemes=["argon2"],
@@ -16,9 +18,6 @@ pwd_context = CryptContext(
     argon2__time_cost=2
 )
 bearer_scheme = HTTPBearer()
-
-revoked_tokens: set[str] = set()
-
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
@@ -52,6 +51,25 @@ def validate_password_strength(password: str) -> str | None:
     return None
 
 
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def revoke_token(db: Session, token: str) -> None:
+    token_hash = _hash_token(token)
+    existing = db.query(RevokedToken).filter(RevokedToken.token_hash == token_hash).first()
+    if existing:
+        return
+
+    db.add(RevokedToken(token_hash=token_hash))
+    db.commit()
+
+
+def is_token_revoked(db: Session, token: str) -> bool:
+    token_hash = _hash_token(token)
+    return db.query(RevokedToken).filter(RevokedToken.token_hash == token_hash).first() is not None
+
+
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     db: Session = Depends(get_db)
@@ -59,7 +77,7 @@ def get_current_user(
     """Decode the JWT token and return the authenticated User."""
     token = credentials.credentials
 
-    if token in revoked_tokens:
+    if is_token_revoked(db, token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has been revoked. Please log in again.",
@@ -79,7 +97,6 @@ def get_current_user(
             detail="Invalid or expired token."
         )
 
-    from app.models.user import User
     user = db.query(User).filter(User.email == email).first()
     if user is None:
         raise HTTPException(
