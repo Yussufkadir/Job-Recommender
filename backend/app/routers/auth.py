@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas.user import (
@@ -7,13 +6,11 @@ from app.schemas.user import (
     ForgotPasswordRequest, ResetPasswordRequest, ChangePasswordRequest, MessageResponse
 )
 from app.services import auth_service
-from app.core.security import create_access_token, get_current_user, revoked_tokens
+from app.core.security import create_access_token, get_current_user, revoke_token
 from app.services.email import send_password_reset_email
-from app.core.config import settings
 from app.models.user import User
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import Limiter
 from slowapi.util import get_remote_address
-import os
 
 router = APIRouter()
 
@@ -45,12 +42,16 @@ async def login(request: Request, user: UserLogin, db: Session = Depends(get_db)
 
 
 @router.post("/logout", response_model=MessageResponse)
-async def logout(request: Request, user: User = Depends(get_current_user)):
+async def logout(
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     auth_header = request.headers.get("Authorization")
     if auth_header:
         scheme, _, token = auth_header.partition(" ")
         if scheme.lower() == "bearer" and token:
-            revoked_tokens.add(token)
+            revoke_token(db, token)
     return {"message": "Logged out successfully"}
 
 

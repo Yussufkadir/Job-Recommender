@@ -192,16 +192,13 @@
 					</div>
 				</a>
 
-				<div class="action-card muted">
+				<a class="action-card" href="/cv_builder">
 					<span class="action-index">03</span>
 					<div>
-						<h4>Prepare for future modules</h4>
-						<p>
-							This overview is now ready to grow with more tools, stats, and workflows as the
-							product expands.
-						</p>
+						<h4>Build a LaTeX CV</h4>
+						<p>Draft, edit, and download your resume source in a dedicated builder workspace.</p>
 					</div>
-				</div>
+				</a>
 			</div>
 		</article>
 

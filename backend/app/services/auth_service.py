@@ -36,14 +36,11 @@ def authenticate_user(db: Session, email: str, password: str):
   
     if not user.hashed_password:
         return None
-        
-    print(f"DEBUG: Verifying password for {email}...")
+
     is_valid = verify_password(password, user.hashed_password)
     if not is_valid:
-        print(f"DEBUG: Password verification failed for {email}")
         return None
-    
-    print(f"DEBUG: Authentication successful for {email}")
+
     return user
 
 def create_password_reset_token(db: Session, email: str) -> str | None :
@@ -89,7 +86,6 @@ def reset_password(db: Session, token: str, new_password: str):
     if not reset_token:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
 
-    # Validate new password
     strength_error = validate_password_strength(new_password)
     if strength_error:
         raise HTTPException(status_code=400, detail=strength_error)
