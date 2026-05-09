@@ -138,13 +138,13 @@
 		}
 	}
 
-	function formatMarkdown(text: string) {
-		if (!text) return '';
-
-		return text
-			.replace(/\n/g, '<br>')
-			.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-			.replace(/- (.*?)(<br>|$)/g, '• $1$2');
+	function safeExternalUrl(link: string) {
+		try {
+			const url = new URL(link);
+			return url.protocol === 'http:' || url.protocol === 'https:' ? url.toString() : '#';
+		} catch {
+			return '#';
+		}
 	}
 </script>
 
@@ -282,7 +282,14 @@
 							<p class="description">{job.description.slice(0, 180)}...</p>
 
 							<div class="actions">
-								<a href={job.link} target="_blank" rel="noreferrer" class="apply-link">View Job</a>
+								<a
+									href={safeExternalUrl(job.link)}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="apply-link"
+								>
+									View Job
+								</a>
 								<button
 									class="tailor-btn"
 									on:click={() => handleTailorCV(job)}
@@ -303,9 +310,7 @@
 											Download PDF
 										</button>
 									</div>
-									<div class="markdown-content">
-										{@html formatMarkdown(tailoredResults[job.title])}
-									</div>
+									<div class="markdown-content">{tailoredResults[job.title]}</div>
 								</div>
 							{/if}
 						</div>
@@ -617,6 +622,8 @@
 	.markdown-content {
 		line-height: 1.6;
 		color: #374f68;
+		white-space: pre-wrap;
+		word-break: break-word;
 	}
 
 	.tailored-header {

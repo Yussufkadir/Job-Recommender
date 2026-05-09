@@ -10,7 +10,6 @@
 
 	async function handleLogin() {
 		errorMessage = '';
-		console.log('handleLogin started', { email });
 
 		try {
 			const response = await fetch(`${API_BASE}/auth/login`, {
@@ -19,21 +18,16 @@
 				body: JSON.stringify({ email, password })
 			});
 
-			console.log('Login response status:', response.status);
 			const data = await response.json();
-			console.log('Login data:', data);
 
 			if (response.ok) {
-				console.log('Login OK, setting token...');
 				setToken(data.access_token);
-				console.log('Token set, navigating to /main_page...');
 				goto('/main_page');
 			} else {
-				console.log('Login failed:', data.detail);
 				errorMessage = data.detail || 'Login Failed';
 			}
 		} catch (error) {
-			console.error({ Error: error });
+			console.error('Login request failed.', error);
 			errorMessage = 'Could not connect to the server.';
 		}
 	}

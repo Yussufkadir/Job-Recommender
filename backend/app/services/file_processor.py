@@ -1,4 +1,3 @@
-import os
 from pypdf import PdfReader
 from docx import Document
 from fastapi import UploadFile, HTTPException
@@ -24,7 +23,8 @@ async def extract_text_from_file(file:UploadFile) -> str:
         elif filename.endswith("docx"):
             doc = Document(file.file)
             for paragraph in doc.paragraphs:
-                content += paragraph + "\n"
+                if paragraph.text:
+                    content += paragraph.text + "\n"
         
         return content.strip()
     
