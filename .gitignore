@@ -29,6 +29,9 @@ Thumbs.db
 
 node_modules/
 .svelte-kit/
+backend/*.db
+backend/*.db-*
+backend/local_data/
 
 .env
 *.env.local

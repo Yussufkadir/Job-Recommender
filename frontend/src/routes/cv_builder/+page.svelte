@@ -4,10 +4,8 @@
 	import AppShell from '$lib/components/AppShell.svelte';
 	import { API_BASE } from '$lib/api';
 	import { authFetch } from '$lib/auth';
+	import { cvWorkspace } from '$lib/stores/cv-workspace';
 
-	const STORAGE_KEY = 'cv-builder-draft';
-	const FILE_NAME_KEY = 'cv-builder-file-name';
-	const FULL_NAME_KEY = 'cv-builder-full-name';
 	const defaultFileName = 'my_cv';
 
 	let cvText = '';
@@ -21,63 +19,34 @@
 	let generatingPdf = false;
 	let importedSourceName = '';
 	let extractedText = '';
-
-	function readStoredValue(key: string) {
-		if (!browser) {
-			return null;
-		}
-
-		const sessionValue = sessionStorage.getItem(key);
-		if (sessionValue !== null) {
-			localStorage.removeItem(key);
-			return sessionValue;
-		}
-
-		const legacyValue = localStorage.getItem(key);
-		if (legacyValue !== null) {
-			sessionStorage.setItem(key, legacyValue);
-			localStorage.removeItem(key);
-			return legacyValue;
-		}
-
-		return null;
-	}
-
-	function persistDraftValue(key: string, value: string) {
-		sessionStorage.setItem(key, value);
-		localStorage.removeItem(key);
-	}
+	let extractedSkills: string[] = [];
 
 	onMount(() => {
-		if (!browser) {
-			return;
-		}
-
-		const savedDraft = readStoredValue(STORAGE_KEY);
-		const savedFileName = readStoredValue(FILE_NAME_KEY);
-		const savedFullName = readStoredValue(FULL_NAME_KEY);
-
-		if (savedDraft) {
-			cvText = savedDraft;
-		}
-
-		if (savedFileName) {
-			fileName = savedFileName;
-		}
-
-		if (savedFullName) {
-			fullName = savedFullName;
-		}
+		const unsubscribe = cvWorkspace.subscribe((state) => {
+			cvText = state.cvText;
+			fileName = state.fileName || defaultFileName;
+			fullName = state.fullName;
+			importedSourceName = state.sourceName;
+			extractedText = state.extractedText;
+			extractedSkills = state.skills;
+		});
 
 		hydrated = true;
+
+		return unsubscribe;
 	});
 
 	$: lineCount = cvText.split('\n').length;
 	$: wordCount = cvText.trim() ? cvText.trim().split(/\s+/).length : 0;
 	$: if (browser && hydrated) {
-		persistDraftValue(STORAGE_KEY, cvText);
-		persistDraftValue(FILE_NAME_KEY, fileName);
-		persistDraftValue(FULL_NAME_KEY, fullName);
+		cvWorkspace.patch({
+			cvText,
+			fileName,
+			fullName,
+			sourceName: importedSourceName,
+			extractedText,
+			skills: extractedSkills
+		});
 	}
 
 	function normalizeFileName(name: string, extension = 'txt') {
@@ -196,7 +165,8 @@
 			fileName = normalizeFileName(file.name, 'txt');
 			importedSourceName = file.name;
 			extractedText = data.text || '';
-			
+			extractedSkills = Array.isArray(data.skills) ? data.skills : [];
+
 			setNotice(
 				`Imported text from ${file.name}. Add your full name above so it stays the first parsed line in the exported PDF.`
 			);
@@ -210,11 +180,7 @@
 	}
 
 	function clearEditor() {
-		cvText = '';
-		fileName = defaultFileName;
-		fullName = '';
-		importedSourceName = '';
-		extractedText = '';
+		cvWorkspace.clear();
 		setNotice('Cleared the editor.');
 	}
 
@@ -224,12 +190,15 @@
 			return;
 		}
 
-		navigator.clipboard.writeText(cvText).then(() => {
-			setNotice('Copied CV text to clipboard!');
-			setTimeout(() => setNotice(''), 2000);
-		}).catch(() => {
-			setNotice('Copy failed. You can still download as PDF.', 'error');
-		});
+		navigator.clipboard
+			.writeText(cvText)
+			.then(() => {
+				setNotice('Copied CV text to clipboard!');
+				setTimeout(() => setNotice(''), 2000);
+			})
+			.catch(() => {
+				setNotice('Copy failed. You can still download as PDF.', 'error');
+			});
 	}
 </script>
 
@@ -247,8 +216,8 @@
 			<p class="guide-kicker">What this adds</p>
 			<h3>Build and export a clean CV that passes ATS screening.</h3>
 			<p>
-				Import your existing CV from PDF or DOCX, review and edit the extracted text, then
-				download a professionally formatted PDF that any applicant tracking system can parse.
+				Import your existing CV from PDF or DOCX, review and edit the extracted text, then download
+				a professionally formatted PDF that any applicant tracking system can parse.
 			</p>
 		</article>
 
@@ -256,8 +225,8 @@
 			<p class="guide-kicker">Current scope</p>
 			<h3>Upload, extract, edit, and export.</h3>
 			<p>
-				The extracted text gives you a fast starting point. Edit it to your liking, and
-				download the final version as a clean PDF ready for submission.
+				The extracted text gives you a fast starting point. Edit it to your liking, and download the
+				final version as a clean PDF ready for submission.
 			</p>
 		</article>
 	</section>
@@ -312,7 +281,7 @@
 						class="hidden-upload"
 						on:change={handleDocumentImport}
 					/>
-					
+
 					<button
 						class="secondary-button"
 						type="button"
@@ -321,23 +290,11 @@
 					>
 						{importingDocument ? 'Importing...' : 'Import PDF/DOCX'}
 					</button>
-					
-					<button 
-						class="secondary-button" 
-						type="button" 
-						on:click={copyText}
-					>
-						Copy text
-					</button>
-					
-					<button 
-						class="secondary-button" 
-						type="button" 
-						on:click={clearEditor}
-					>
-						Clear
-					</button>
-					
+
+					<button class="secondary-button" type="button" on:click={copyText}> Copy text </button>
+
+					<button class="secondary-button" type="button" on:click={clearEditor}> Clear </button>
+
 					<button
 						class="primary-button"
 						type="button"
@@ -367,10 +324,12 @@
 				<h3>Extracted text preview</h3>
 				{#if extractedText}
 					<p>
-						Extracted from <strong>{importedSourceName}</strong>. This is the raw text
-						used to populate the editor.
+						Extracted from <strong>{importedSourceName}</strong>. This is the raw text used to
+						populate the editor.
 					</p>
-					<pre class="source-preview">{extractedText.slice(0, 500)}{extractedText.length > 500 ? '...' : ''}</pre>
+					<pre class="source-preview">{extractedText.slice(0, 500)}{extractedText.length > 500
+							? '...'
+							: ''}</pre>
 				{:else}
 					<p>Import a PDF or DOCX and the extracted text will appear here for review.</p>
 				{/if}
