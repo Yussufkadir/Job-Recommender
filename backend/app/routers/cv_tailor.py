@@ -63,26 +63,34 @@ async def generate_tailored_cv(cv_text: str, job_description: str) -> str:
 @limiter.limit("5/minute")
 async def cv_tailor(
     request: Request,
-    file: UploadFile = File(...), 
+    file: UploadFile | None = File(default=None),
+    cv_text: str | None = Form(default=None),
     job_description: str = Form(...),
     current_user: User = Depends(get_current_user)
 ):
     if len(job_description) > MAX_JOB_DESCRIPTION_LENGTH:
         raise HTTPException(status_code=400, detail="job description is too large for processing")
-   
-    file.file.seek(0, 2)
-    if file.file.tell() > 5 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="file is too large for processing")
-    
-    await file.seek(0)
-    
-    cv_text = await extract_text_from_file(file)
-    if not cv_text:
-        raise HTTPException(status_code=400, detail="extraction failed.")
-    if len(cv_text) > MAX_CV_TEXT_LENGTH:
+
+    resolved_cv_text = (cv_text or "").strip()
+
+    if file is not None:
+        file.file.seek(0, 2)
+        if file.file.tell() > 5 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="file is too large for processing")
+
+        await file.seek(0)
+
+        resolved_cv_text = await extract_text_from_file(file)
+        if not resolved_cv_text:
+            raise HTTPException(status_code=400, detail="extraction failed.")
+
+    if not resolved_cv_text:
+        raise HTTPException(status_code=400, detail="Provide a CV file or CV text for tailoring.")
+
+    if len(resolved_cv_text) > MAX_CV_TEXT_LENGTH:
         raise HTTPException(status_code=400, detail="CV text is too large for processing")
     
-    tailored_content = await generate_tailored_cv(cv_text, job_description)
+    tailored_content = await generate_tailored_cv(resolved_cv_text, job_description)
 
     return {"message": "CV processed successfully", "tailored_cv": tailored_content}
 

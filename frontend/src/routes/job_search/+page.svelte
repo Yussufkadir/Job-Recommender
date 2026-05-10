@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import AppShell from '$lib/components/AppShell.svelte';
 	import { API_BASE, getRecommendations, type Job } from '$lib/api';
 	import { authFetch } from '$lib/auth';
+	import { cvWorkspace } from '$lib/stores/cv-workspace';
 
 	let cvText = '';
 	let skillsInput = '';
@@ -9,10 +11,60 @@
 	let query = '';
 	let jobs: Job[] = [];
 	let loading = false;
+	let parsingCv = false;
 	let error = '';
 	let cvFile: File | null = null;
 	let tailoringJobId: string | null = null;
 	let tailoredResults: Record<string, string> = {};
+	let sharedSourceName = '';
+	let fullName = '';
+	let hydrated = false;
+
+	onMount(() => {
+		const unsubscribe = cvWorkspace.subscribe((state) => {
+			if (cvFile && state.sourceName && state.sourceName !== cvFile.name) {
+				cvFile = null;
+			}
+
+			if (!state.cvText.trim() && !state.sourceName) {
+				cvFile = null;
+			}
+
+			cvText = state.cvText;
+			skillsInput = state.skills.join(', ');
+			sharedSourceName = state.sourceName;
+			fullName = state.fullName;
+		});
+
+		hydrated = true;
+
+		return unsubscribe;
+	});
+
+	function parseSkillsInput(value: string) {
+		return value
+			.split(',')
+			.map((skill) => skill.trim())
+			.filter((skill, index, skills) => skill.length > 0 && skills.indexOf(skill) === index);
+	}
+
+	$: if (hydrated) {
+		cvWorkspace.patch({
+			cvText,
+			skills: parseSkillsInput(skillsInput),
+			sourceName: sharedSourceName,
+			fullName
+		});
+	}
+
+	$: currentCvName = cvFile?.name || sharedSourceName || 'No CV file attached yet';
+	$: currentCvDescription = parsingCv
+		? 'Reading your uploaded CV now.'
+		: cvFile
+			? 'Your uploaded file is ready for search and tailoring.'
+			: sharedSourceName
+				? 'This CV was synced from the builder and is ready for search and tailoring.'
+				: 'Attach a PDF or DOCX to unlock CV extraction and tailored rewrite suggestions.';
 
 	async function handleFileSelect(event: Event) {
 		const target = event.target as HTMLInputElement;
@@ -22,8 +74,8 @@
 			const formData = new FormData();
 			formData.append('file', cvFile);
 
-			cvText = 'Extracting text from file...';
-			skillsInput = 'Extracting...';
+			parsingCv = true;
+			error = '';
 
 			try {
 				const res = await authFetch(`${API_BASE}/api/parse_cv`, {
@@ -35,14 +87,15 @@
 					const data = await res.json();
 					cvText = data.text;
 					skillsInput = data.skills && data.skills.length > 0 ? data.skills.join(', ') : '';
+					sharedSourceName = cvFile.name;
 				} else {
-					cvText = '';
-					alert('Failed to read file text.');
+					error = 'Failed to read file text.';
 				}
 			} catch (err) {
 				console.error(err);
-				cvText = '';
-				alert('Error parsing file.');
+				error = 'Error parsing file.';
+			} finally {
+				parsingCv = false;
 			}
 		}
 	}
@@ -62,10 +115,7 @@
 		error = '';
 		jobs = [];
 
-		const skillsArray = skillsInput
-			.split(',')
-			.map((skill) => skill.trim())
-			.filter((skill) => skill.length > 0);
+		const skillsArray = parseSkillsInput(skillsInput);
 
 		try {
 			const response = await getRecommendations(cvText, query, skillsArray, seniorityLevel);
@@ -79,8 +129,8 @@
 	}
 
 	async function handleTailorCV(job: Job) {
-		if (!cvFile) {
-			alert('Please upload a CV file (PDF/DOCX) before tailoring.');
+		if (!cvText.trim()) {
+			alert('Please upload or paste CV content before tailoring.');
 			return;
 		}
 
@@ -88,7 +138,7 @@
 
 		try {
 			const formData = new FormData();
-			formData.append('file', cvFile);
+			formData.append('cv_text', cvText);
 			formData.append('job_description', job.description);
 
 			const res = await authFetch(`${API_BASE}/api/cv_tailor`, {
@@ -116,7 +166,7 @@
 			const res = await authFetch(`${API_BASE}/api/download_pdf`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ text })
+				body: JSON.stringify({ text, name: fullName })
 			});
 
 			if (res.ok) {
@@ -169,12 +219,8 @@
 
 		<article class="guide-card file-status">
 			<p class="guide-kicker">Current context</p>
-			<h3>{cvFile ? cvFile.name : 'No CV file attached yet'}</h3>
-			<p>
-				{cvFile
-					? 'Your uploaded file is ready for parsing and tailoring.'
-					: 'Attach a PDF or DOCX to unlock CV extraction and tailored rewrite suggestions.'}
-			</p>
+			<h3>{currentCvName}</h3>
+			<p>{currentCvDescription}</p>
 		</article>
 	</section>
 
@@ -196,9 +242,14 @@
 						/>
 						<div class="file-display">
 							<span class="icon">CV</span>
-							<span class="filename">{cvFile ? cvFile.name : 'Choose a file...'}</span>
+							<span class="filename">{parsingCv ? 'Reading CV...' : currentCvName}</span>
 						</div>
 					</div>
+					{#if sharedSourceName && !cvFile}
+						<p class="sync-note">
+							Synced from the CV Builder. Upload a new file here only if you want to replace it.
+						</p>
+					{/if}
 				</div>
 
 				<div class="form-group">
@@ -470,6 +521,13 @@
 
 	.filename {
 		color: #52687f;
+	}
+
+	.sync-note {
+		margin: 0.65rem 0 0;
+		color: #5b7288;
+		font-size: 0.9rem;
+		line-height: 1.5;
 	}
 
 	.search-btn {
