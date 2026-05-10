@@ -5,7 +5,7 @@ from typing import Optional
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Job recommendation platform"
 
-    DATABASE_URL: str = "sqlite:///./job_recommender.db"
+    DATABASE_URL: str = "sqlite:///./local_data/job_recommender.db"
 
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
