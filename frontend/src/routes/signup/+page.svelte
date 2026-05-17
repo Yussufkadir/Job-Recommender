@@ -2,11 +2,6 @@
 	import { goto } from '$app/navigation';
 	import { API_BASE } from '$lib/api';
 	import { setToken } from '$lib/auth';
-
-	const authProviders = [
-		{ name: 'Gmail', key: 'gmail', icon: '✉️' },
-		{ name: 'GitHub', key: 'github', icon: '🐙' }
-	];
 	let showPassword = false;
 	let email = '';
 	let password = '';
@@ -59,31 +54,24 @@
 			loading = false;
 		}
 	}
-
-	function handleSocialLogin(key: string) {
-		if (key === 'gmail') {
-			window.location.href = `${API_BASE}/auth/google/login`;
-		} else if (key === 'github') {
-			window.location.href = `${API_BASE}/auth/github/login`;
-		}
-	}
 </script>
 
 <svelte:head>
-	<title>Sign Up Page</title>
+	<title>Create Account | Job Recommender</title>
 </svelte:head>
 
 <section class="page-shell">
 	<section class="signup-card">
 		<header>
-			<h2>Please sign up to the platform</h2>
+			<h2>Create your job search workspace</h2>
+			<p class="helper-copy">Use an email and a strong password to get started.</p>
 		</header>
 
 		<form class="signup-grid" on:submit|preventDefault={handleAccountCreate}>
 			<label>
 				<span class="label-text">Email</span>
 				<div class="input-wrap">
-					<input class="text-input" type="text" placeholder="Email" bind:value={email} required />
+					<input class="text-input" type="email" placeholder="Email" bind:value={email} required />
 				</div>
 			</label>
 			<label>
@@ -130,7 +118,9 @@
 			{/if}
 
 			<div class="actions">
-				<button type="submit" class="primary-action">Sign up</button>
+				<button type="submit" class="primary-action" disabled={loading}>
+					{loading ? 'Creating account...' : 'Sign up'}
+				</button>
 			</div>
 		</form>
 
@@ -138,22 +128,6 @@
 			<a href="/login" style="color: #a5b4fc; text-decoration: none; font-size: 0.9rem;">
 				Already have an account? Log in
 			</a>
-		</div>
-
-		<div class="social-login">
-			<p>Or continue with</p>
-			<div class="social-buttons">
-				{#each authProviders as provider}
-					<button
-						type="button"
-						class={`social-button ${provider.key}`}
-						on:click={() => handleSocialLogin(provider.key)}
-					>
-						<span aria-hidden="true">{provider.icon}</span>
-						{provider.name}
-					</button>
-				{/each}
-			</div>
 		</div>
 	</section>
 </section>
@@ -187,17 +161,18 @@
 		text-align: center;
 	}
 
+	.helper-copy {
+		margin: 0.5rem 0 0;
+		text-align: center;
+		color: #475569;
+		font-size: 0.95rem;
+	}
+
 	.error-text {
 		color: #ef4444;
 		font-size: 0.9rem;
 		margin-top: 0.5rem;
 		text-align: center;
-	}
-
-	.input-grid {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
 	}
 
 	.text-input {
@@ -276,48 +251,8 @@
 		font-size: 0.95rem;
 	}
 
-	.social-login {
-		text-align: center;
-		display: flex;
-		flex-direction: column;
-		gap: 0.9rem;
-	}
-
-	.social-login p {
-		margin: 0;
-		color: #777779;
-		font-size: 0.9rem;
-	}
-
-	.social-buttons {
-		display: flex;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-		justify-content: center;
-	}
-
-	.social-button {
-		border-radius: 0.85rem;
-		border: 1px solid rgba(148, 163, 184, 0.4);
-		background: rgb(253, 253, 253);
-		color: #000000;
-		padding: 0.6rem 1.2rem;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.45rem;
-		font-weight: 600;
-		cursor: pointer;
-	}
-
-	.social-button span {
-		font-size: 1.1rem;
-	}
-
-	.social-button.gmail {
-		border-color: rgba(244, 114, 182, 0.6);
-	}
-
-	.social-button.github {
-		border-color: rgba(148, 163, 184, 0.8);
+	.primary-action:disabled {
+		opacity: 0.7;
+		cursor: not-allowed;
 	}
 </style>
