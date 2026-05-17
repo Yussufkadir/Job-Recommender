@@ -41,7 +41,7 @@
 	</header>
 
 	<section class="timeline">
-		{#each steps as step, index}
+		{#each steps as step, index (step.title)}
 			<article class="card">
 				<div class="icon" aria-hidden="true">{step.icon}</div>
 				<div>

@@ -1,78 +1,99 @@
-# 🎯 Job Recommender
+# Job Recommender
 
-An AI-powered job recommendation platform that reads your CV, understands your skills, and surfaces only the roles that genuinely match your profile — not just keyword hits.
+Job Recommender is an AI-assisted job search workspace that helps a candidate move from CV upload to tailored job applications in one flow.
 
-> **Live demo**: [job-recommender-phi.vercel.app](https://job-recommender-phi.vercel.app)
+## What the project does
 
----
+- Parses CVs from PDF and DOCX files
+- Extracts skills with a dedicated NLP service
+- Aggregates job listings from external sources
+- Scores roles against a candidate profile
+- Rewrites CV content for a selected job description
+- Tracks saved applications and pipeline status in a dashboard
+- Exports CV content as a clean PDF
 
-## What it does
+## Stack
 
-Most job boards show you everything and let you figure it out. This does the opposite — it reads your CV, extracts your actual skills, and then goes out and finds jobs, scores each one against your profile, and only shows you the ones that cross a 70% semantic match threshold.
+- Frontend: SvelteKit
+- Backend: FastAPI, SQLAlchemy, JWT auth
+- Recommender service: spaCy NER + Word2Vec similarity scoring
+- Tailoring service: transformer-based text generation
+- Database: SQLite by default
 
-You upload your CV once. The rest is automated.
+## Repository structure
 
----
+- `frontend/`: SvelteKit client application
+- `backend/`: FastAPI API, auth, job search, CV parsing, tracker endpoints
+- `ml_services/recommender_service/`: skills extraction and recommendation scoring
+- `ml_services/llm_service/`: CV tailoring service
+- `datasets/`: notebooks and training assets used during model development
 
-## How it works
+## Local development
 
-**1. CV parsing**
-Upload a PDF or DOCX. A custom-trained spaCy NER model — trained on annotated resume data — extracts your skills and technologies. Not regex, not keyword lists. An actual named entity model built for this.
+### 1. Frontend
 
-**2. Skill enrichment**
-Extracted skills are passed through a Gensim knowledge graph that understands relationships between technologies. If your CV says PyTorch, the system also knows you likely know NumPy, Python, and ML pipelines. This gives the matching step a fuller picture of your profile.
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-**3. Job discovery**
-Jobs are fetched live from Adzuna and scraped from NoFluffJobs. You can narrow the search with a job title and seniority level before the scrapers run.
+The frontend expects the backend at `http://localhost:8000` by default. You can override it with `VITE_API_URL` or `VITE_BASE_URL`.
 
-**4. Semantic matching**
-Each job description is scored against your skill profile using a semantic similarity model. Only jobs above 70% similarity are shown. No filler, no unrelated listings.
+### 2. Backend API
 
-**5. CV tailoring** *(optional)*
-For any job you want to apply to, you can generate a tailored version of your CV using Phi-3 Mini. The output can be downloaded as a PDF.
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
 
----
+### 3. Recommender service
 
-## Screenshots
+```bash
+cd ml_services/recommender_service
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app:app --reload --port 8001
+```
 
-<!-- Screenshots will be added here -->
+### 4. CV tailoring service
 
----
+```bash
+cd ml_services/llm_service
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app:app --reload --port 8002
+```
 
-## Features
+## Environment variables
 
-- Google and GitHub OAuth, plus email/password signup
-- Password reset via email
-- CV upload (PDF or DOCX)
-- Skill extraction via custom spaCy NER model
-- Knowledge graph built with Gensim Word2Vec
-- Live job scraping from Adzuna and NoFluffJobs
-- Semantic job-to-CV matching with a 70% cutoff
-- Job title and seniority filters
-- AI CV tailoring with Phi-3 Mini
-- PDF export of tailored CV
+Backend values:
 
----
+- `SECRET_KEY`
+- `FRONTEND_URL`
+- `BACKEND_URL`
+- `RECOMMENDER_URL`
+- `LLM_SERVICE_URL`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `ADZUNA_APPLICATION_ID`
+- `ADZUNA_APPLICATION_KEY`
 
-## Tech
+Frontend values:
 
-**Frontend** — SvelteKit  
-**Backend** — FastAPI, Pydantic, SQLAlchemy  
-**NER** — spaCy (custom trained), Label Studio for annotation  
-**Knowledge graph** — Gensim Word2Vec  
-**Semantic matching** — Gensim similarity model  
-**Job sources** — Adzuna API, NoFluffJobs (Selenium)  
-**CV tailoring** — Phi-3 Mini  
-**Auth** — JWT, Google OAuth, GitHub OAuth  
+- `VITE_API_URL` or `VITE_BASE_URL`
 
----
+## Notes
 
-## Author
+- The recommender service downloads model artifacts on first run.
+- Job search quality depends on external providers and configured API keys.
+- Password reset email delivery requires a valid Resend configuration.
 
-**YussufKadir Syurmen** — [@Yussufkadir](https://github.com/Yussufkadir)
+## Status
 
----
-
-## License
-
-MIT
+This repository is structured as a portfolio-ready MVP with separate services for auth, recommendations, CV tailoring, and application tracking.

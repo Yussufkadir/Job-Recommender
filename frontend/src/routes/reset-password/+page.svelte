@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { API_BASE } from '$lib/api';
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 
 	let token = '';
@@ -34,7 +33,7 @@
 
 		try {
 			if (!token) {
-				error = 'Missing reset token. Please use the link from your email.'
+				error = 'Missing reset token. Please use the link from your email.';
 				return;
 			}
 			const res = await fetch(`${API_BASE}/auth/reset-password`, {

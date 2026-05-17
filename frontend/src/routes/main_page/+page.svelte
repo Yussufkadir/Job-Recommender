@@ -148,7 +148,7 @@
 				</div>
 			{:else}
 				<div class="status-grid">
-					{#each statusCards as card}
+					{#each statusCards as card (card.status)}
 						<div class="status-card">
 							<div class="status-card-head">
 								<div>
@@ -220,7 +220,7 @@
 				</p>
 			{:else}
 				<div class="recent-list">
-					{#each recentApplications as application}
+					{#each recentApplications as application (application.id)}
 						<div class="recent-row">
 							<div>
 								<h4>{application.job_title}</h4>

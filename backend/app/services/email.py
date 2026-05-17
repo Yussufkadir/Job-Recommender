@@ -15,15 +15,23 @@ def _mask_email(email:str) -> str:
         return "***"
 
 def send_password_reset_email(to_email: str, reset_token: str) -> Optional[dict]:
-    frontend_base = (settings.FRONTEND_URL).rstrip("/")
+    frontend_base = (settings.FRONTEND_URL or "").strip().rstrip("/")
+    if not frontend_base:
+        logger.warning("FRONTEND_URL is not set. Skipping password reset email send.")
+        return None
+
     reset_link = f"{frontend_base}/reset-password#token={reset_token}"
 
     if not settings.RESEND_API_KEY:
         logger.warning("RESEND_API_KEY is not set. Skipping password reset email send.")
         return None
-    
+
+    from_email = (settings.RESEND_FROM_EMAIL or "").strip()
+    if not from_email:
+        logger.warning("RESEND_FROM_EMAIL is not set. Skipping password reset email send.")
+        return None
+
     resend.api_key = settings.RESEND_API_KEY
-    
 
     html_content = f"""
     <p>You requested a password reset.</p>
@@ -39,7 +47,7 @@ def send_password_reset_email(to_email: str, reset_token: str) -> Optional[dict]
     )
 
     params = {
-        "from": settings.RESEND_FROM_EMAIL.strip(),
+        "from": from_email,
         "to": [to_email],
         "subject": "Password Reset Request",
         "html": html_content,

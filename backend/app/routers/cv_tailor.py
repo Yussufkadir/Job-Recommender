@@ -11,8 +11,18 @@ import httpx
 
 router = APIRouter()
 
-LLM_SERVICE_URL = os.getenv("LLM_SERVICE_URL", "http://127.0.0.1:8002")
-RECOMMENDER_URL = os.getenv("RECOMMENDER_URL", "http://127.0.0.1:8001")
+def _resolve_service_url(raw_url: str, route: str) -> str:
+    normalized_url = raw_url.rstrip("/")
+    if normalized_url.endswith(route):
+        return normalized_url
+    return f"{normalized_url}{route}"
+
+
+LLM_SERVICE_URL = _resolve_service_url(
+    os.getenv("LLM_SERVICE_URL", "http://127.0.0.1:8002"),
+    "/cv_tailor"
+)
+RECOMMENDER_URL = os.getenv("RECOMMENDER_URL", "http://127.0.0.1:8001").rstrip("/")
 MAX_CV_TEXT_LENGTH = 100_000
 MAX_JOB_DESCRIPTION_LENGTH = 20_000
 
@@ -49,15 +59,28 @@ async def generate_tailored_cv(cv_text: str, job_description: str) -> str:
                 "job_description": job_description
             }
             response = await client.post(LLM_SERVICE_URL, json=payload)
+            response.raise_for_status()
 
-            if response.status_code == 200:
-                return response.json().get("tailored_cv", "No output received")
-            else:
-                print(f"LLM service error: {response.text}")
-                return "Error: LLM service failure."
-        except Exception as e:
-            print(f"Connection error: {e}")
-            return "Error: could not connect to LLM service."
+            tailored_cv = response.json().get("tailored_cv", "").strip()
+            if not tailored_cv:
+                raise HTTPException(
+                    status_code=502,
+                    detail="CV tailoring service returned an empty response."
+                )
+
+            return tailored_cv
+        except httpx.HTTPStatusError as exc:
+            print(f"LLM service error: {exc.response.status_code} {exc.response.text}")
+            raise HTTPException(
+                status_code=502,
+                detail="CV tailoring service returned an error."
+            ) from exc
+        except httpx.HTTPError as exc:
+            print(f"Connection error: {exc}")
+            raise HTTPException(
+                status_code=503,
+                detail="Could not reach the CV tailoring service."
+            ) from exc
 
 @router.post("/cv_tailor")
 @limiter.limit("5/minute")
