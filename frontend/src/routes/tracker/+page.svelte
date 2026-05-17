@@ -92,7 +92,7 @@
 				<label for="filter">Stage</label>
 				<select id="filter" bind:value={filter}>
 					<option value="all">All statuses</option>
-					{#each statuses as status}
+					{#each statuses as status (status)}
 						<option value={status}>{statusLabels[status]}</option>
 					{/each}
 				</select>
@@ -101,7 +101,7 @@
 		</div>
 
 		<div class="summary-grid">
-			{#each statusCounts as item}
+			{#each statusCounts as item (item.status)}
 				<div class={`summary-tile ${item.status}`}>
 					<span>{item.label}</span>
 					<strong>{item.count}</strong>
@@ -126,7 +126,7 @@
 		</section>
 	{:else}
 		<section class="application-list">
-			{#each filtered as app}
+			{#each filtered as app (app.id)}
 				<article class="application-card">
 					<div class="card-head">
 						<div>
@@ -151,7 +151,7 @@
 								on:change={(event) =>
 									onStatusChange(app, (event.currentTarget as HTMLSelectElement).value)}
 							>
-								{#each statuses as status}
+								{#each statuses as status (status)}
 									<option value={status}>{statusLabels[status]}</option>
 								{/each}
 							</select>

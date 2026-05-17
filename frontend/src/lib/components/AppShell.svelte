@@ -59,7 +59,7 @@
 			</div>
 
 			<nav class="topnav" aria-label="Application sections">
-				{#each navItems as item}
+				{#each navItems as item (item.href)}
 					<a
 						href={item.href}
 						class:active={isActive($page.url.pathname, item.href)}

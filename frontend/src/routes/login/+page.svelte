@@ -34,7 +34,7 @@
 </script>
 
 <svelte:head>
-	<title>Login Page</title>
+	<title>Sign In | Job Recommender</title>
 </svelte:head>
 
 <section class="page-shell">
@@ -50,7 +50,7 @@
 			<label>
 				<span class="label-text">Email</span>
 				<div class="input-wrap">
-					<input class="text-input" type="text" placeholder="Email" bind:value={email} required />
+					<input class="text-input" type="email" placeholder="Email" bind:value={email} required />
 				</div>
 			</label>
 			<label>
@@ -84,8 +84,10 @@
 				</a>
 			</div>
 		</form>
-		<div class="social-login">
-			<p>Or continue with</p>
+		<div style="text-align: center;">
+			<a href="/signup" style="color: #2563eb; font-size: 0.95rem; text-decoration: none;">
+				Need an account? Sign up
+			</a>
 		</div>
 	</section>
 </section>
@@ -199,18 +201,5 @@
 	.label-text {
 		margin-left: 0.5rem;
 		font-weight: 500;
-	}
-
-	.social-login {
-		text-align: center;
-		display: flex;
-		flex-direction: column;
-		gap: 0.9rem;
-	}
-
-	.social-login p {
-		margin: 0;
-		color: #595a5d;
-		font-size: 0.9rem;
 	}
 </style>

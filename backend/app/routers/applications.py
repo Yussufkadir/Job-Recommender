@@ -6,7 +6,7 @@ from app.services.cache import invalidate_user_application_summary
 from app.core.database import get_db
 from app.core.security import get_current_user
 
-router = APIRouter(prefix="/applications", tags=["applications"])
+router = APIRouter(tags=["applications"])
 
 @router.post("", response_model=ApplicationOut, status_code=status.HTTP_201_CREATED)
 def create_application(
@@ -35,11 +35,12 @@ def get_application(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user),
 ):
-    app = db.query(JobApplication).filter(JobApplication.id == application_id).first()
+    app = db.query(JobApplication).filter(
+        JobApplication.id == application_id,
+        JobApplication.user_id == current_user.id
+    ).first()
     if not app:
         raise HTTPException(status_code=404, detail="Application not found")
-    if app.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Forbidden")
     return app
 
 @router.get("", response_model=list[ApplicationOut])
@@ -57,11 +58,12 @@ def patch_application(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user),
 ):
-    app = db.query(JobApplication).filter(JobApplication.id == application_id).first()
+    app = db.query(JobApplication).filter(
+        JobApplication.id == application_id,
+        JobApplication.user_id == current_user.id
+    ).first()
     if not app:
         raise HTTPException(status_code=404, detail="Application not found.")
-    if app.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Forbidden")
     
     if payload.status is not None:
         app.status = payload.status

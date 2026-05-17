@@ -19,6 +19,7 @@ class JobApplication(Base):
     company = Column(String(255), nullable=False)
     job_url = Column(String(255), nullable=True)
     status = Column(Enum(ApplicationStatus), nullable=False, default=ApplicationStatus.SAVED)
+    notes = Column(Text, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)

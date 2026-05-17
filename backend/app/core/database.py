@@ -1,7 +1,7 @@
 import shutil
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -30,11 +30,27 @@ def _prepare_sqlite_database(database_url: str) -> None:
         shutil.copy2(legacy_database_path, resolved_path)
 
 
+def _run_startup_migrations(engine) -> None:
+    inspector = inspect(engine)
+
+    if "job_applications" not in inspector.get_table_names():
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("job_applications")}
+    if "notes" in columns:
+        return
+
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE job_applications ADD COLUMN notes TEXT"))
+
+
 _prepare_sqlite_database(settings.DATABASE_URL)
 
 engine = create_engine(
     settings.DATABASE_URL, connect_args={"check_same_thread": False}
 )
+
+_run_startup_migrations(engine)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
