@@ -2,8 +2,19 @@
 	import { onMount } from 'svelte';
 	import AppShell from '$lib/components/AppShell.svelte';
 	import { API_BASE, getRecommendations, type Job } from '$lib/api';
+	import {
+		createApplication,
+		getApplications,
+		updateApplicationStatus
+	} from '$lib/api/applications';
 	import { authFetch } from '$lib/auth';
 	import { cvWorkspace } from '$lib/stores/cv-workspace';
+	import type { Application, ApplicationStatus } from '$lib/types/application';
+
+	type JobFeedback = {
+		message: string;
+		tone: 'success' | 'error';
+	};
 
 	let cvText = '';
 	let skillsInput = '';
@@ -16,6 +27,11 @@
 	let cvFile: File | null = null;
 	let tailoringJobId: string | null = null;
 	let tailoredResults: Record<string, string> = {};
+	let savingJobKey: string | null = null;
+	let savedJobKeys: string[] = [];
+	let trackedApplicationLookup: Record<string, Application> = {};
+	let jobSaveFeedback: Record<string, JobFeedback> = {};
+	let applyPromptJob: Job | null = null;
 	let sharedSourceName = '';
 	let fullName = '';
 	let hydrated = false;
@@ -36,6 +52,7 @@
 			fullName = state.fullName;
 		});
 
+		void loadTrackedApplications();
 		hydrated = true;
 
 		return unsubscribe;
@@ -65,6 +82,58 @@
 			: sharedSourceName
 				? 'This CV was synced from the builder and is ready for search and tailoring.'
 				: 'Attach a PDF or DOCX to unlock CV extraction and tailored rewrite suggestions.';
+	$: promptTrackedApplication = applyPromptJob ? getTrackedApplication(applyPromptJob) : null;
+
+	function normalizeTrackerValue(value: string | undefined) {
+		return (value ?? '').trim().toLowerCase();
+	}
+
+	function buildTrackedKey(jobTitle: string, company: string, jobUrl?: string) {
+		const normalizedTitle = normalizeTrackerValue(jobTitle);
+		const normalizedCompany = normalizeTrackerValue(company);
+		const normalizedUrl = normalizeTrackerValue(jobUrl);
+
+		return normalizedUrl
+			? `${normalizedCompany}::${normalizedTitle}::${normalizedUrl}`
+			: `${normalizedCompany}::${normalizedTitle}`;
+	}
+
+	function getApplicationLookupKeys(application: Application) {
+		const keys = [buildTrackedKey(application.job_title, application.company)];
+
+		if (application.job_url) {
+			keys.unshift(
+				buildTrackedKey(application.job_title, application.company, application.job_url)
+			);
+		}
+
+		return keys;
+	}
+
+	function syncTrackedApplications(applications: Application[]) {
+		const nextLookup: Record<string, Application> = {};
+		const nextKeys: string[] = [];
+
+		for (const application of applications) {
+			for (const key of getApplicationLookupKeys(application)) {
+				nextLookup[key] = application;
+				if (!nextKeys.includes(key)) {
+					nextKeys.push(key);
+				}
+			}
+		}
+
+		trackedApplicationLookup = nextLookup;
+		savedJobKeys = nextKeys;
+	}
+
+	async function loadTrackedApplications() {
+		try {
+			syncTrackedApplications(await getApplications());
+		} catch (err) {
+			console.error('Could not load tracked applications.', err);
+		}
+	}
 
 	async function handleFileSelect(event: Event) {
 		const target = event.target as HTMLInputElement;
@@ -196,6 +265,156 @@
 			return '#';
 		}
 	}
+
+	function getJobKey(job: Job) {
+		return `${job.source}:${job.company}:${job.title}:${job.link}`;
+	}
+
+	function getTrackedApplication(job: Job) {
+		const safeJobUrl = safeExternalUrl(job.link);
+
+		return (
+			trackedApplicationLookup[
+				buildTrackedKey(job.title, job.company, safeJobUrl === '#' ? undefined : safeJobUrl)
+			] ?? trackedApplicationLookup[buildTrackedKey(job.title, job.company)]
+		);
+	}
+
+	function getSaveButtonLabel(job: Job) {
+		const trackedApplication = getTrackedApplication(job);
+		if (!trackedApplication) {
+			return 'Save to tracker';
+		}
+
+		if (trackedApplication.status === 'applied') {
+			return 'Applied';
+		}
+
+		return 'In tracker';
+	}
+
+	function upsertTrackedApplication(application: Application) {
+		const nextLookup = { ...trackedApplicationLookup };
+		const nextKeys = [...savedJobKeys];
+
+		for (const key of getApplicationLookupKeys(application)) {
+			nextLookup[key] = application;
+			if (!nextKeys.includes(key)) {
+				nextKeys.push(key);
+			}
+		}
+
+		trackedApplicationLookup = nextLookup;
+		savedJobKeys = nextKeys;
+	}
+
+	async function syncJobWithTracker(
+		job: Job,
+		targetStatus: ApplicationStatus,
+		successMessage: string
+	) {
+		const jobKey = getJobKey(job);
+		const safeJobUrl = safeExternalUrl(job.link);
+		const existingApplication = getTrackedApplication(job);
+
+		savingJobKey = jobKey;
+		jobSaveFeedback = Object.fromEntries(
+			Object.entries(jobSaveFeedback).filter(([existingKey]) => existingKey !== jobKey)
+		);
+
+		try {
+			if (existingApplication) {
+				if (existingApplication.status === targetStatus) {
+					jobSaveFeedback = {
+						...jobSaveFeedback,
+						[jobKey]: {
+							message: `Already marked as ${targetStatus} in your tracker.`,
+							tone: 'success'
+						}
+					};
+					return true;
+				}
+
+				const updatedApplication = await updateApplicationStatus(
+					existingApplication.id,
+					targetStatus
+				);
+				upsertTrackedApplication(updatedApplication);
+			} else {
+				const createdApplication = await createApplication({
+					job_title: job.title,
+					company: job.company,
+					job_url: safeJobUrl === '#' ? undefined : safeJobUrl,
+					status: targetStatus
+				});
+				upsertTrackedApplication(createdApplication);
+			}
+
+			jobSaveFeedback = {
+				...jobSaveFeedback,
+				[jobKey]: { message: successMessage, tone: 'success' }
+			};
+			return true;
+		} catch (err) {
+			console.error(err);
+			jobSaveFeedback = {
+				...jobSaveFeedback,
+				[jobKey]: {
+					message:
+						targetStatus === 'applied'
+							? 'Could not mark this role as applied right now.'
+							: 'Could not save this role right now.',
+					tone: 'error'
+				}
+			};
+			return false;
+		} finally {
+			savingJobKey = null;
+		}
+	}
+
+	async function saveJobToTracker(job: Job) {
+		await syncJobWithTracker(job, 'saved', 'Saved to your tracker.');
+	}
+
+	function openApplyPrompt(job: Job) {
+		const safeJobUrl = safeExternalUrl(job.link);
+
+		if (safeJobUrl === '#') {
+			jobSaveFeedback = {
+				...jobSaveFeedback,
+				[getJobKey(job)]: {
+					message: 'This job link looks invalid, so it could not be opened.',
+					tone: 'error'
+				}
+			};
+			return;
+		}
+
+		window.open(safeJobUrl, '_blank');
+		applyPromptJob = job;
+	}
+
+	function closeApplyPrompt() {
+		applyPromptJob = null;
+	}
+
+	async function confirmAppliedFromPrompt() {
+		if (!applyPromptJob) {
+			return;
+		}
+
+		const currentJob = applyPromptJob;
+		const success = await syncJobWithTracker(
+			currentJob,
+			'applied',
+			'Added to your tracker as applied.'
+		);
+
+		if (success) {
+			closeApplyPrompt();
+		}
+	}
 </script>
 
 <svelte:head>
@@ -285,7 +504,7 @@
 						<option value="Intern">Intern/Trainee</option>
 						<option value="Junior">Junior</option>
 						<option value="Mid">Mid</option>
-						<option value="Seniority">Senior</option>
+						<option value="Senior">Senior</option>
 					</select>
 				</div>
 
@@ -316,7 +535,8 @@
 
 			{#if jobs.length > 0}
 				<div class="jobs-grid">
-					{#each jobs as job}
+					{#each jobs as job (getJobKey(job))}
+						{@const jobKey = getJobKey(job)}
 						<div class="job-card">
 							<div class="job-header">
 								<div>
@@ -333,27 +553,46 @@
 							<p class="description">{job.description.slice(0, 180)}...</p>
 
 							<div class="actions">
-								<a
-									href={safeExternalUrl(job.link)}
-									target="_blank"
-									rel="noopener noreferrer"
+								<button
+									type="button"
 									class="apply-link"
+									on:click={() => openApplyPrompt(job)}
+									disabled={savingJobKey === jobKey}
 								>
-									View Job
-								</a>
+									Open job and log application
+								</button>
 								<button
 									class="tailor-btn"
+									type="button"
 									on:click={() => handleTailorCV(job)}
 									disabled={tailoringJobId === job.title}
 								>
 									{tailoringJobId === job.title ? 'Processing...' : 'Tailor CV'}
 								</button>
+								<button
+									class="save-btn"
+									type="button"
+									on:click={() => saveJobToTracker(job)}
+									disabled={savingJobKey === jobKey || savedJobKeys.includes(jobKey)}
+								>
+									{#if savingJobKey === jobKey}
+										Saving...
+									{:else}
+										{getSaveButtonLabel(job)}
+									{/if}
+								</button>
 							</div>
+
+							{#if jobSaveFeedback[jobKey]}
+								<p class={`job-feedback ${jobSaveFeedback[jobKey].tone}`}>
+									{jobSaveFeedback[jobKey].message}
+								</p>
+							{/if}
 
 							{#if tailoredResults[job.title]}
 								<div class="tailored-result">
 									<div class="tailored-header">
-										<h4>AI Suggestions</h4>
+										<h4>Tailored CV</h4>
 										<button
 											class="download-btn"
 											on:click={() => downloadPDF(tailoredResults[job.title])}
@@ -376,6 +615,42 @@
 		</section>
 	</div>
 </AppShell>
+
+{#if applyPromptJob}
+	<div class="apply-modal-backdrop" role="presentation">
+		<div
+			class="apply-modal"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="apply-modal-title"
+			tabindex="-1"
+		>
+			<p class="guide-kicker">Tracker update</p>
+			<h3 id="apply-modal-title">Did you apply for {applyPromptJob.title}?</h3>
+			<p class="apply-modal-copy">
+				{#if promptTrackedApplication}
+					This role is already in your tracker as <strong>{promptTrackedApplication.status}</strong
+					>. If you applied, we&apos;ll update it to <strong>applied</strong>.
+				{:else}
+					If yes, we&apos;ll add it to your tracker as <strong>applied</strong>. You can change the
+					status later from the Tracker page.
+				{/if}
+			</p>
+
+			<div class="apply-modal-actions">
+				<button type="button" class="modal-secondary" on:click={closeApplyPrompt}> Not yet </button>
+				<button
+					type="button"
+					class="modal-primary"
+					on:click={confirmAppliedFromPrompt}
+					disabled={savingJobKey === getJobKey(applyPromptJob)}
+				>
+					{savingJobKey === getJobKey(applyPromptJob) ? 'Updating...' : 'Yes, mark as applied'}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.guide-grid {
@@ -644,7 +919,8 @@
 	}
 
 	.apply-link,
-	.tailor-btn {
+	.tailor-btn,
+	.save-btn {
 		padding: 0.75rem 1.25rem;
 		border-radius: 10px;
 		font-weight: 600;
@@ -653,8 +929,8 @@
 	.apply-link {
 		background: #2563eb;
 		color: white;
-		text-decoration: none;
 		border: none;
+		cursor: pointer;
 	}
 
 	.tailor-btn {
@@ -664,9 +940,31 @@
 		cursor: pointer;
 	}
 
-	.tailor-btn:disabled {
+	.save-btn {
+		border: 1px solid rgba(15, 138, 103, 0.25);
+		background: rgba(231, 247, 238, 0.96);
+		color: #0f6b53;
+		cursor: pointer;
+	}
+
+	.tailor-btn:disabled,
+	.save-btn:disabled {
 		opacity: 0.7;
 		cursor: not-allowed;
+	}
+
+	.job-feedback {
+		margin: 0.9rem 0 0;
+		font-size: 0.92rem;
+		font-weight: 600;
+	}
+
+	.job-feedback.success {
+		color: #0f766e;
+	}
+
+	.job-feedback.error {
+		color: #b42318;
 	}
 
 	.tailored-result {
@@ -720,6 +1018,70 @@
 		line-height: 1.6;
 	}
 
+	.apply-modal-backdrop {
+		position: fixed;
+		inset: 0;
+		display: grid;
+		place-items: center;
+		padding: 1.5rem;
+		background: rgba(12, 22, 38, 0.45);
+		backdrop-filter: blur(6px);
+		z-index: 120;
+	}
+
+	.apply-modal {
+		width: min(100%, 30rem);
+		padding: 1.5rem;
+		border-radius: 1.5rem;
+		border: 1px solid rgba(138, 160, 185, 0.28);
+		background: rgba(252, 253, 255, 0.98);
+		box-shadow: 0 30px 60px rgba(17, 33, 56, 0.2);
+	}
+
+	.apply-modal h3 {
+		margin: 0 0 0.75rem;
+		color: #16324f;
+	}
+
+	.apply-modal-copy {
+		margin: 0;
+		line-height: 1.65;
+		color: #52687f;
+	}
+
+	.apply-modal-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 0.85rem;
+		margin-top: 1.5rem;
+		flex-wrap: wrap;
+	}
+
+	.modal-primary,
+	.modal-secondary {
+		padding: 0.8rem 1.1rem;
+		border-radius: 999px;
+		font-weight: 700;
+		cursor: pointer;
+	}
+
+	.modal-primary {
+		border: none;
+		background: linear-gradient(135deg, #143b6b, #2563eb);
+		color: #f8fbff;
+	}
+
+	.modal-secondary {
+		border: 1px solid rgba(138, 160, 185, 0.4);
+		background: #ffffff;
+		color: #23405d;
+	}
+
+	.modal-primary:disabled {
+		opacity: 0.7;
+		cursor: not-allowed;
+	}
+
 	@media (max-width: 1024px) {
 		.guide-grid {
 			grid-template-columns: 1fr;
@@ -754,6 +1116,11 @@
 
 		.tailored-header {
 			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.apply-modal-actions {
+			flex-direction: column-reverse;
 			align-items: stretch;
 		}
 	}
