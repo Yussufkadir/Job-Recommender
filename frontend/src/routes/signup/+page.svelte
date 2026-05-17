@@ -61,6 +61,7 @@
 </svelte:head>
 
 <section class="page-shell">
+	<a href="/" class="back-link">Back to home</a>
 	<section class="signup-card">
 		<header>
 			<h2>Create your job search workspace</h2>
@@ -140,6 +141,21 @@
 		justify-content: center;
 		padding: 2rem;
 		background: radial-gradient(circle at top, rgb(252, 252, 252), transparent 60%);
+	}
+
+	.back-link {
+		position: absolute;
+		top: 2rem;
+		left: 2rem;
+		color: rgba(12, 15, 206, 0.761);
+		text-decoration: none;
+		font-weight: 600;
+		font-size: 0.95rem;
+		z-index: 10;
+		transition: opacity 0.2s;
+	}
+	.back-link:hover {
+		opacity: 0.8;
 	}
 
 	.signup-card {
