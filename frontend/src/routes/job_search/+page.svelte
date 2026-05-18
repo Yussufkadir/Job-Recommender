@@ -810,7 +810,7 @@
 		padding: 1rem;
 		border: none;
 		border-radius: 1rem;
-		background: linear-gradient(135deg, #143b6b, #2563eb);
+		background: linear-gradient(135deg, #0e11ee);
 		color: white;
 		font-size: 1rem;
 		font-weight: 700;
