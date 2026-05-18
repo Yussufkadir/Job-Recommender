@@ -272,7 +272,7 @@
 		flex-direction: column;
 		justify-content: space-between;
 		gap: 2rem;
-		background: linear-gradient(135deg, rgba(18, 52, 96, 0.98), rgba(34, 82, 153, 0.95)), #143b6b;
+		background: linear-gradient(135deg,  #0e12eedd), #143b6b;
 		color: #f7fbff;
 	}
 

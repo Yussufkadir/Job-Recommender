@@ -108,8 +108,8 @@
 		min-height: 100vh;
 		padding: 1.5rem;
 		background:
-			radial-gradient(circle at top left, rgba(97, 153, 255, 0.2), transparent 30%),
-			radial-gradient(circle at top right, rgba(43, 91, 178, 0.16), transparent 26%),
+			radial-gradient(circle at top left, rgba(244, 245, 246, 0.995), transparent 30%),
+			radial-gradient(circle at top right, rgba(246, 247, 250, 0.95), transparent 26%),
 			linear-gradient(180deg, #f4f8fc 0%, #eef3f8 100%);
 	}
 
@@ -126,7 +126,7 @@
 		left: -4rem;
 		width: 16rem;
 		height: 16rem;
-		background: rgba(57, 142, 255, 0.2);
+		background: rgba(238, 239, 242, 0.935);
 	}
 
 	.glow-right {
@@ -134,7 +134,7 @@
 		right: 0;
 		width: 18rem;
 		height: 18rem;
-		background: rgba(16, 185, 129, 0.12);
+		background: rgba(255, 255, 255, 0.989);
 	}
 
 	.topbar {
@@ -150,9 +150,8 @@
 		padding: 1rem 1.2rem;
 		border: 1px solid rgba(138, 160, 185, 0.35);
 		border-radius: 1.5rem;
-		background: rgba(248, 251, 255, 0.82);
+		background: rgba(255, 255, 255, 0.854);
 		backdrop-filter: blur(20px);
-		box-shadow: 0 22px 40px rgba(33, 52, 78, 0.08);
 	}
 
 	.brand-block {
@@ -172,7 +171,7 @@
 		font-weight: 800;
 		letter-spacing: 0.08em;
 		color: #f8fbff;
-		background: linear-gradient(135deg, #143b6b, #2563eb);
+		background: linear-gradient(135deg, #143b6b, #0e11ee);
 		box-shadow: 0 16px 24px rgba(37, 99, 235, 0.24);
 	}
 
@@ -209,7 +208,7 @@
 		border-radius: 999px;
 		text-decoration: none;
 		font-weight: 700;
-		color: #35536f;
+		color: #0e11ee;
 		background: transparent;
 		border: 1px solid transparent;
 		transition:
@@ -234,7 +233,7 @@
 		font-weight: 700;
 		cursor: pointer;
 		color: #f8fbff;
-		background: linear-gradient(135deg, #0f2d50, #204f90);
+		background: linear-gradient(135deg, #0e11ee);
 		box-shadow: 0 14px 24px rgba(17, 46, 84, 0.18);
 	}
 

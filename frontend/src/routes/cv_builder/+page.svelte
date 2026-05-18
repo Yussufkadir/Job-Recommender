@@ -401,7 +401,7 @@
 	.guide-card,
 	.editor-card,
 	.side-card {
-		border: 1px solid rgba(122, 146, 171, 0.26);
+		border: 1px solid rgba(242, 246, 250, 0.897);
 		border-radius: 1.5rem;
 		background: rgba(255, 255, 255, 0.9);
 		box-shadow: 0 20px 40px rgba(25, 47, 74, 0.08);
@@ -418,7 +418,7 @@
 
 	.emphasis {
 		background:
-			linear-gradient(135deg, rgba(24, 82, 161, 0.96), rgba(33, 125, 153, 0.9)),
+			linear-gradient(135deg, #0e11ee),
 			rgba(255, 255, 255, 0.9);
 		color: #f4f8ff;
 	}
@@ -435,22 +435,7 @@
 		letter-spacing: 0.14em;
 		font-size: 0.74rem;
 		font-weight: 700;
-		color: #567493;
-	}
-
-	.guide-card h3,
-	.card-head h2,
-	.side-card h3 {
-		margin: 0 0 0.65rem;
-		color: #16324f;
-	}
-
-	.guide-card p,
-	.side-card p,
-	.card-head p,
-	.notice,
-	.field label {
-		color: #4b6782;
+		color: #2162a2;
 	}
 
 	.card-head,
