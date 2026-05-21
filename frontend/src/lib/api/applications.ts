@@ -46,3 +46,13 @@ export async function createApplication(payload: CreateApplicationInput): Promis
 	}
 	return await res.json();
 }
+
+export async function deleteApplication(id: number): Promise<void>{
+	const response = await authFetch(`${API_BASE}/api/applications/${id}`, {
+		method: 'DELETE'
+	});
+	if(!response.ok){
+		const data = await response.json().catch(() => ({}));
+		throw new Error(data.detail || 'Failed to delete application.');
+	}
+}

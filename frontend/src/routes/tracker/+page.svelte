@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import AppShell from '$lib/components/AppShell.svelte';
-	import { getApplications, updateApplicationStatus } from '$lib/api/applications';
+	import { getApplications, updateApplicationStatus, deleteApplication} from '$lib/api/applications';
 	import type { Application, ApplicationStatus } from '$lib/types/application';
 
 	const statuses: ApplicationStatus[] = ['saved', 'applied', 'interview', 'offer', 'rejected'];
@@ -17,6 +17,7 @@
 	let loading = true;
 	let error = '';
 	let filter: ApplicationStatus | 'all' = 'all';
+	let deletingIDs: Set<number> = new Set();
 
 	$: filtered =
 		filter === 'all'
@@ -51,6 +52,21 @@
 			console.error(err);
 			app.status = previousStatus;
 			error = 'Status update failed.';
+		}
+	}
+
+	async function handleDelete(app: Application){
+		if(!confirm(`Remove "${app.job_title}" from your tracker ?`)) return;
+		deletingIDs.add(app.id);
+		try{
+			await deleteApplication(app.id);
+			applications = applications.filter(a => a.id !== app.id)
+		} catch(err) {
+			console.error(err);
+			error = 'Failed to delete the application';
+		} finally {
+			deletingIDs.delete(app.id)
+			deletingIDs = new Set(deletingIDs);
 		}
 	}
 
@@ -156,6 +172,17 @@
 								{/each}
 							</select>
 						</label>
+
+						<div class="card-actions">
+							<button
+								type="button"
+								class="delete-button"
+								on:click={() => handleDelete(app)}
+								disabled={deletingIDs.has(app.id)}
+							>
+								{deletingIDs.has(app.id) ? 'Removing...' : 'Remove'}
+							</button>
+						</div>
 
 						{#if app.notes}
 							<p class="notes">{app.notes}</p>
@@ -396,6 +423,32 @@
 
 	.state-panel.error h3 {
 		color: #b42318;
+	}
+
+	.delete-button{
+		border: 1px solid #b42318;
+		background: transparent;
+		color: #b42318;
+		border-radius: 999px;
+		padding: 0.5rem 1.0rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+
+	.delete-button:hover:not(:disabled){
+		background: #fce7e7;
+	}
+
+	.delete-button:disabled{
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.card-actions{
+		display:flex;
+		gap: 0.5rem;
+		margin-top: 0.5rem;
 	}
 
 	@media (max-width: 960px) {
