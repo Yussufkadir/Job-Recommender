@@ -75,3 +75,21 @@ def patch_application(
 
     invalidate_user_application_summary(current_user.id)
     return app
+
+@router.delete("/{application_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_application(application_id: int, 
+                       db: Session = Depends(get_db), 
+                       current_user = Depends(get_current_user), 
+                       ):
+    app = db.query(JobApplication).filter(
+        JobApplication.id == application_id,
+        JobApplication.user_id == current_user.id
+    ).first()
+
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    db.delete(app)
+    db.commit()
+
+    invalidate_user_application_summary(current_user.id)
