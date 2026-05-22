@@ -23,12 +23,13 @@ export async function getRecommendations(
 	cvText: string,
 	query: string,
 	skills: string[],
-	seniority: string = 'All'
+	seniority: string = 'All',
+	country: string = "pl"
 ): Promise<RecommendationResponse> {
 	const res = await authFetch(`${API_URL}/jobs/recommend`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ cv_text: cvText, query: query, skills: skills, seniority: seniority })
+		body: JSON.stringify({ cv_text: cvText, query: query, skills: skills, seniority: seniority, country:country})
 	});
 
 	if (!res.ok) {
