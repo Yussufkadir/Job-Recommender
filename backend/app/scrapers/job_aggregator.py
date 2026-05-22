@@ -13,10 +13,11 @@ class JobAggregator():
         self.nofluff = NoFluffScrapper()
         self.scorer_url = os.getenv("RECOMMENDER_URL", "http://127.0.0.1:8001")
 
-    def get_all_jobs(self, query, user_skills=None, seniority=None):
+    def get_all_jobs(self, query, user_skills=None, seniority=None, country="pl"):
         all_jobs = []
 
-        df_adzuna = self.adzuna.find_jobs(query, seniority=seniority)
+        adzuna = AdzunaJobFinder(country=country)
+        df_adzuna = adzuna.find_jobs(query, seniority=seniority)
 
         if not df_adzuna.empty:
 

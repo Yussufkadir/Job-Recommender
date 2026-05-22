@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import torch
 from transformers import pipeline
 import time
+import re
 
 
 app = FastAPI()
@@ -45,11 +46,12 @@ def tailor_cv(req: TailorRequest):
         {
             "role": "system",
             "content": (
-                "You are a professional CV writer. Rewrite the candidate CV so it aligns better "
-                "with the provided job description while staying truthful to the original content. "
-                "Return only the CV text. Do not add explanations, commentary, or introductory "
-                "remarks. Preserve the original structure as much as possible and do not invent "
-                "experience, skills, or achievements that are not supported by the input CV."
+                "You are an expert CV writer and ATS optimisation specialist. "
+                "You rewrite CVs to match specific job descriptions while staying completely truthful to the candidate's actual experience. "
+                "NEVER invent any new roles, companies, dates, skills, or achievements. "
+                "Use ONLY the information present in the original CV. "
+                "Return ONLY the tailored CV as plain text with clear section headers (SUMMARY, EXPERIENCE, SKILLS, EDUCATION). "
+                "Do NOT include any notes, comments, or explanations after the CV. The output must end with the last section of the CV."
             )
         },
         {
@@ -58,14 +60,30 @@ def tailor_cv(req: TailorRequest):
                 f"### Job Description:\n{req.job_description}\n\n"
                 f"### Original CV:\n{req.cv_text}\n\n"
                 "### Task:\n"
-                "Rewrite the CV so the most relevant experience and skills from the original CV "
-                "are highlighted for this role. Output only the tailored CV."
+                "1. Analyse the job description for the top 5–8 key skills and keywords.\n"
+                "2. Rewrite the professional summary (2-3 sentences) to directly address the role’s main requirements.\n"
+                "3. Reorder bullet points under each role so that the most relevant achievements appear first.\n"
+                "4. Incorporate missing keywords naturally into the experience and skills sections, but only if the candidate genuinely possesses them or can reasonably claim them based on their background.\n"
+                "5. Quantify results wherever possible (e.g., 'Increased efficiency by 30%' rather than 'Improved processes').\n"
+                "6. Remove any experience or skills that are completely irrelevant to this job.\n"
+                "7. Output the tailored CV as plain text. Do not add any explanations."
             )
         }
     ]
-    outputs = pipe(messages, max_new_tokens=1500, do_sample=True, temperature=0.7)
-    generated_output = outputs[0]['generated_text'][-1]['content']
+    formatted_prompt = pipe.tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True
+    )
+
+    def clean_output(text: str) -> str:
+         text = re.sub(r"^```\w*\s*", "", text, flags=re.MULTILINE)
+         text = re.sub(r"\n```\s*$", "", text)
+         return text.strip()
+
+    outputs = pipe(formatted_prompt, return_full_text = False, max_new_tokens=1200, do_sample=True, temperature=0.3, top_p=0.9, repetition_penalty=1.05)
+    generated_output = clean_output(outputs[0]['generated_text'].strip())
 
     duration = time.time() - start_time
     print(f"Time taken for generating new cv is {duration:.2f}")
-    return {"tailored_cv": generated_output}
+    return {"tailored_cv": clean_output(generated_output)}
