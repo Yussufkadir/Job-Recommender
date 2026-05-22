@@ -35,6 +35,7 @@
 	let sharedSourceName = '';
 	let fullName = '';
 	let hydrated = false;
+	let selectedCountries: string[] = ['pl'];
 
 	onMount(() => {
 		const unsubscribe = cvWorkspace.subscribe((state) => {
@@ -185,9 +186,9 @@
 		jobs = [];
 
 		const skillsArray = parseSkillsInput(skillsInput);
-
+		const countryParam = selectedCountries.join(',');
 		try {
-			const response = await getRecommendations(cvText, query, skillsArray, seniorityLevel);
+			const response = await getRecommendations(cvText, query, skillsArray, seniorityLevel, countryParam);
 			jobs = response.jobs;
 		} catch (err) {
 			console.error(err);
@@ -508,6 +509,27 @@
 					</select>
 				</div>
 
+				<div class="form-group">
+					<label for="countries">Countries</label>
+					<select 
+						id="countries"
+						multiple
+						bind:value={selectedCountries}
+						class="multi-country"
+						>
+						        <option value="pl">Poland</option>
+        						<option value="de">Germany</option>
+        						<option value="fr">France</option>
+        						<option value="gb">United Kingdom</option>
+        						<option value="us">United States</option>
+        						<option value="nl">Netherlands</option>
+        						<option value="se">Sweden</option>
+        						<option value="ca">Canada</option>
+								<option value="it">Italy</option>
+						</select>			
+						<p class="hint">Hold Ctrl (Cmd) to select multiple countries.</p>
+				</div>
+
 				{#if error}
 					<p class="error-msg">{error}</p>
 				{/if}
@@ -707,6 +729,10 @@
 	.input-section {
 		flex: 1;
 		max-width: 450px;
+	}
+
+	.multi-country{
+		min-height: 100px;
 	}
 
 	.glass-card {
