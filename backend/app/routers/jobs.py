@@ -1,15 +1,21 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 import pandas as pd
+import logging
 
 from app.routers.auth import limiter
+
+logger = logging.getLogger(__name__)
 from app.scrapers.job_aggregator import JobAggregator
 from app.services.recommender_client import RecommenderClient
 from app.core.security import get_current_user
 from app.models.user import User
 
 router = APIRouter()
+
+ALLOWED_COUNTRIES = {"pl", "de", "fr", "gb", "us", "nl", "se", "ca", "it"}
+MAX_COUNTRIES_PER_REQUEST = 5
 
 class JobSearchRequest(BaseModel):
     cv_text: str
@@ -30,6 +36,19 @@ async def recommend_jobs(
     if not countries:
         countries = ["pl"]
 
+    invalid = set(countries) - ALLOWED_COUNTRIES
+    if invalid:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported countries: {', '.join(invalid)}"
+        )
+
+    if len(countries) > MAX_COUNTRIES_PER_REQUEST:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Maximum {MAX_COUNTRIES_PER_REQUEST} countries per request"
+        )
+
     all_jobs_dfs = []
     for country_code in countries:
         aggregator = JobAggregator()
@@ -43,7 +62,7 @@ async def recommend_jobs(
             if not jobs_df.empty:
                 all_jobs_dfs.append(jobs_df)
         except Exception as e:
-            print(f"Search failed for {country_code}: {e}")
+            logger.warning("Search failed for %s: %s", country_code, e)
             continue
 
     if not all_jobs_dfs:

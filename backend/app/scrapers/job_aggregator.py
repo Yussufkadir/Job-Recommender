@@ -2,10 +2,13 @@ import pandas as pd
 import sys
 import os
 import requests
+import logging
 
 
 from app.scrapers.adzuna_job_finder import AdzunaJobFinder
 from app.scrapers.nofluff_scraper import NoFluffScrapper
+
+logger = logging.getLogger(__name__)
 
 class JobAggregator():
     def __init__(self):
@@ -25,7 +28,7 @@ class JobAggregator():
             all_jobs.extend(adzuna_list)
 
         if os.getenv("RENDER") == "true":
-            print("Skipping NoFluffScraper on Render to prevent Memory Limit Exceeded (Chrome takes > 500MB)")
+            logger.info("Skipping NoFluffScraper on Render (Chrome memory constraints)")
         else:
             nofluff_jobs = self.nofluff.find_jobs(query, limit=5, seniority=seniority)
             all_jobs.extend(nofluff_jobs)

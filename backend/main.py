@@ -44,8 +44,8 @@ app.add_middleware(
         frontend_url
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"]
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"]
 )
 
 app.include_router(auth.router, prefix="/auth", tags=["Authentication"])

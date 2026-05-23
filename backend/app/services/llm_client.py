@@ -1,5 +1,8 @@
 import requests
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 class LLMClient:
     def __init__(self):
@@ -18,9 +21,9 @@ class LLMClient:
             if response.status_code == 200:
                 return response.json().get("tailored_cv")
             else:
-                print(f"LLM service error: {response.status_code}")
+                logger.warning("LLM service returned non-200: %s", response.status_code)
                 return None
-            
+
         except Exception as e:
-            print(f"LLM connection failed: {e}")
+            logger.error("LLM client connection failed: %s", e)
             return None

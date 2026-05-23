@@ -1,11 +1,13 @@
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.user import User, PasswordResetToken
 from app.schemas.user import UserCreate
 from app.core.security import get_password_hash, verify_password, validate_password_strength
 from app.core.config import settings
+import secrets
+import hashlib
 
 
 def get_user_by_email(db: Session, email: str):
@@ -53,21 +55,25 @@ def create_password_reset_token(db: Session, email: str) -> str | None :
         PasswordResetToken.used == False,
     ).update({"used": True})
 
-    token = str(uuid.uuid4())
-    expires_at = datetime.utcnow() + timedelta(minutes=settings.RESET_TOKEN_EXPIRE_MINUTES)
+    raw_token = secrets.token_urlsafe(32)
+    hashed_token = hashlib.sha256(raw_token.encode()).hexdigest()
     
-    db_token = PasswordResetToken(user_id=user.id, token=token, expires_at=expires_at)
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.RESET_TOKEN_EXPIRE_MINUTES)
+    
+    db_token = PasswordResetToken(user_id=user.id, token=hashed_token, expires_at=expires_at)
     db.add(db_token)
     db.commit()
     
-    return token
+    return raw_token
 
 
 def verify_reset_token(db: Session, token: str) -> User | None:
+    hashed_token = hashlib.sha256(token.encode()).hexdigest()
+    
     reset_token = db.query(PasswordResetToken).filter(
-        PasswordResetToken.token == token,
+        PasswordResetToken.token == hashed_token,  
         PasswordResetToken.used == False,
-        PasswordResetToken.expires_at > datetime.utcnow()
+        PasswordResetToken.expires_at > datetime.now(timezone.utc)
     ).first()
     
     if not reset_token:
@@ -77,10 +83,12 @@ def verify_reset_token(db: Session, token: str) -> User | None:
 
 
 def reset_password(db: Session, token: str, new_password: str):
+    hashed_token = hashlib.sha256(token.encode()).hexdigest()
+
     reset_token = db.query(PasswordResetToken).filter(
-        PasswordResetToken.token == token,
+        PasswordResetToken.token == hashed_token,
         PasswordResetToken.used == False,
-        PasswordResetToken.expires_at > datetime.utcnow()
+        PasswordResetToken.expires_at > datetime.now(timezone.utc)
     ).first()
 
     if not reset_token:
