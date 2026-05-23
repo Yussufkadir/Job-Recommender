@@ -25,6 +25,16 @@ class JobSearchRequest(BaseModel):
     country: Optional[str] = "pl"
     query: Optional[str] = "Software Engineer"
 
+@router.get("/test-recommender")
+async def test_recommender():
+    import httpx
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        r = await client.post(
+            "https://syurmen-recommender-service.hf.space/extract",
+            json={"text": "Python FastAPI Machine Learning"}
+        )
+        return {"status": r.status_code, "skills": r.json()}
+
 @router.post("/recommend")
 @limiter.limit("10/minute")
 async def recommend_jobs(
