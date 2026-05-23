@@ -85,6 +85,24 @@ async def recommend_jobs(
 
     rec_client = RecommenderClient()
     scored_jobs = []
+    logger.warning(f"Jobs from Adzuna: {len(jobs_list)}")
+    logger.warning(f"First job: {jobs_list[0] if jobs_list else 'EMPTY'}")
+
+    rec_client = RecommenderClient()
+    scored_jobs = []
+    for i, job in enumerate(jobs_list):
+        logger.warning(f"Scoring job {i+1}/{len(jobs_list)}: {job.get('title', 'N/A')}")
+        try:
+            score = rec_client.get_score(
+                user_skills=payload.skills,
+                job_description=job.get('description', '')
+            )
+            logger.warning(f"Score for job {i+1}: {score}")
+            if score > 70:
+                job['match_score'] = score
+                scored_jobs.append(job)
+        except Exception as e:
+            logger.error(f"Scoring failed for job {i+1}: {e}")
     for job in jobs_list:
         score = rec_client.get_score(
             user_skills=payload.skills,
