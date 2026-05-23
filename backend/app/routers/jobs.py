@@ -61,6 +61,7 @@ async def recommend_jobs(
 
     all_jobs_dfs = []
     for country_code in countries:
+        logger.warning(f"Searching country: {country_code}")
         aggregator = JobAggregator()
         try:
             jobs_df = aggregator.get_all_jobs(
@@ -69,16 +70,22 @@ async def recommend_jobs(
                 seniority=payload.seniority,
                 country=country_code
             )
+            logger.warning(f"Country {country_code}: {len(jobs_df)} jobs found")
             if not jobs_df.empty:
                 all_jobs_dfs.append(jobs_df)
         except Exception as e:
-            logger.warning("Search failed for %s: %s", country_code, e)
+            logger.error(f"Search failed for {country_code}: {e}")
             continue
 
+    logger.warning(f"Total DataFrames collected: {len(all_jobs_dfs)}")
+
     if not all_jobs_dfs:
+        logger.warning("No jobs found at all")
         return {"message": "No jobs found", "jobs": []}
 
+    logger.warning("Concatenating DataFrames...")
     combined_df = pd.concat(all_jobs_dfs, ignore_index=True)
+    logger.warning(f"Combined shape: {combined_df.shape}")
     combined_df = combined_df.drop_duplicates(subset=["link"])
 
     jobs_list = combined_df.to_dict('records')
