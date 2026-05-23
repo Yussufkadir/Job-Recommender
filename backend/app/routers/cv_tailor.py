@@ -133,7 +133,7 @@ async def parse_cv_text(
     
     skills = []
     try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(timeout=600.0) as client:
             response = await client.post(
                 f"{RECOMMENDER_URL}/extract",
                 json={"text": text}
