@@ -58,11 +58,14 @@ class AdzunaJobFinder():
                 raw_description = item.get("description", "")
                 final_description = raw_description
 
-                if raw_description:
-                    try:
-                        final_description = self.translator.translate(raw_description[:4999])
-                    except Exception as trans_error:
-                        logger.warning("Translation failed: %s", trans_error)
+            if raw_description:
+                try:
+                    final_description = self.translator.translate(raw_description[:4999])
+                except Exception as trans_error:
+                    logger.debug("Translation failed, using original: %s", trans_error)
+                    final_description = raw_description  
+            else:
+                final_description = raw_description
 
                 jobs.append({
                     "title": item.get("title"),
