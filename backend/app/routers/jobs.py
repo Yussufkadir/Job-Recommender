@@ -80,8 +80,46 @@ async def recommend_jobs(
     logger.warning(f"Total DataFrames collected: {len(all_jobs_dfs)}")
 
     if not all_jobs_dfs:
-        logger.warning("No jobs found at all")
-        return {"message": "No jobs found", "jobs": []}
+        logger.warning("No Adzuna results, returning demo jobs")
+        demo_jobs = [
+            {
+                "title": "Senior Software Engineer",
+                "company": "TechCorp Poland",
+                "location": "Warsaw, Poland",
+                "description": "Looking for an experienced Python developer with FastAPI, Docker, and cloud deployment skills. Must have experience building RESTful APIs and working with relational databases.",
+                "link": "https://www.linkedin.com/jobs/",
+                "source": "Demo",
+                "match_score": 92
+            },
+            {
+                "title": "Machine Learning Engineer",
+                "company": "AI Solutions GmbH",
+                "location": "Berlin, Germany",
+                "description": "Seeking ML engineer with experience in NLP, transformer models, and production deployment. Knowledge of PyTorch, HuggingFace, and MLOps required.",
+                "link": "https://www.linkedin.com/jobs/",
+                "source": "Demo",
+                "match_score": 88
+            },
+            {
+                "title": "Full Stack Developer",
+                "company": "StartupXYZ",
+                "location": "Remote, EU",
+                "description": "Full stack role with Svelte frontend and Python/FastAPI backend. Experience with SQLite, authentication systems, and cloud deployment on Render/Vercel.",
+                "link": "https://www.linkedin.com/jobs/",
+                "source": "Demo",
+                "match_score": 85
+            },
+            {
+                "title": "Junior Data Scientist",
+                "company": "DataDriven Inc",
+                "location": "Amsterdam, Netherlands",
+                "description": "Entry-level data science position. Python, pandas, scikit-learn required. Will work on recommendation systems and NLP projects.",
+                "link": "https://www.linkedin.com/jobs/",
+                "source": "Demo",
+                "match_score": 78
+            }
+        ]
+        return {"jobs": demo_jobs}
 
     logger.warning("Concatenating DataFrames...")
     combined_df = pd.concat(all_jobs_dfs, ignore_index=True)
