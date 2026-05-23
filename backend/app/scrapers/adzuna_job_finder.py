@@ -27,10 +27,13 @@ class AdzunaJobFinder():
             final_query = f"{seniority} {query}"
 
         params = {
+            "app_id": self.app_id,
+            "app_key": self.app_key,
             "results_per_page": result_per_page,
             "what": final_query,
             "content-type": "application/json"
         }
+
 
         logger.info("Searching for %s in %s", final_query, self.country)
 
