@@ -5,27 +5,46 @@ from gensim.models import Word2Vec
 import os
 import logging
 from huggingface_hub import snapshot_download
+from contextlib import asynccontextmanager
 
 logger = logging.getLogger(__name__)
 
 MAX_TEXT_LENGTH = 100_000
 
-MODEL_DIR = snapshot_download(
-    repo_id="syurmen/recommender_ner_model",
-    local_dir="/tmp/model",
-    local_dir_use_symlinks=False
-)
+nlp = None
+model = None
 
-KG_DIR = snapshot_download(
-    repo_id="syurmen/knowledge_graph_model",
-    local_dir="/tmp/model",
-    local_dir_use_symlinks=False
-)
+def download_models():
+    model_dir = snapshot_download(
+        repo_id="syurmen/recommender_ner_model",
+        local_dir="/tmp/model/ner",
+        local_dir_use_symlinks=False
+    )
+    
+    kg_dir = snapshot_download(
+        repo_id="syurmen/knowledge_graph_model",
+        local_dir="/tmp/model/kg",
+        local_dir_use_symlinks=False
+    )
+    
+    return model_dir, kg_dir
 
-app = FastAPI()
+def load_models():
+    global nlp, model
+    
+    model_dir, kg_dir = download_models()
+    
+    nlp = spacy.load(os.path.join(model_dir, "transformer-models/model-best"))
+    model = Word2Vec.load(os.path.join(kg_dir, "job_recommender.model"))
+    logger.info("Models loaded successfully")
 
-nlp = spacy.load(os.path.join(MODEL_DIR, "transformer-models/model-best"))
-model = Word2Vec.load(os.path.join(KG_DIR, "job_recommender.model"))
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    load_models()
+    yield
+    pass
+
+app = FastAPI(lifespan=lifespan)
 
 class ScoreRequests(BaseModel):
     user_skills: list[str]
