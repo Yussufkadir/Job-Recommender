@@ -42,10 +42,8 @@ class AdzunaJobFinder():
         logger.info("Searching for %s in %s", final_query, self.country)
 
         try:
-            response = requests.get(
-                response = requests.get(url)
-            )
-
+            response = requests.get(url)
+            
             if response.status_code == 200:
                 logger.debug("Adzuna search successful")
             if response.status_code == 401:
