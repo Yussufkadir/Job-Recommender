@@ -1,5 +1,8 @@
 import requests
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 class RecommenderClient:
     def __init__(self):
@@ -17,9 +20,9 @@ class RecommenderClient:
             if response.status_code == 200:
                 return response.json().get("score", 0)
             else:
-                print(f"failed to get the KG model {response}")
+                logger.warning("Recommender service returned non-200: %s", response)
                 return 0
-            
+
         except Exception as e:
-            print(f"failed to get the connection with the recommender client: {e}")
+            logger.error("Recommender client connection failed: %s", e)
             return 0

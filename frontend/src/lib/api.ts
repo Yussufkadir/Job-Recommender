@@ -37,3 +37,23 @@ export async function getRecommendations(
 	}
 	return await res.json();
 }
+
+export async function getATSScore(cvText: string, jobDescription: string):
+Promise<{
+	score: number;
+	missing_keywords: string[];
+	formatting_issues: string[];
+	suggestions: string[];
+}> {
+	const res = await authFetch(`${API_BASE}/api/ats_score`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json'},
+		body: JSON.stringify({ cv_text: cvText, job_description: jobDescription})
+
+	});
+	if (!res.ok) {
+		const data = await res.json().catch(() => ({}));
+		throw new Error(data.detail || 'Failed to get ATS score');
+	}
+	return await res.json();
+}

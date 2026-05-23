@@ -1,22 +1,25 @@
-import requests 
+import requests
 import pandas as pd
 import os
+import logging
 from dotenv import load_dotenv
 from deep_translator import GoogleTranslator
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
+
 class AdzunaJobFinder():
     def __init__(self, country="pl"):
         self.app_id = os.getenv("ADZUNA_APPLICATION_ID")
         self.app_key = os.getenv("ADZUNA_APPLICATION_KEY")
-        self.country = country 
+        self.country = country
         self.translator = GoogleTranslator(source='auto', target='en')
 
         self.base_url = f"https://api.adzuna.com/v1/api/jobs/{country}/search/1"
 
         if not self.app_id or not self.app_key:
-            print("Adzuna API keys did not found")
+            logger.warning("Adzuna API keys not found")
 
     def find_jobs(self, query, result_per_page=20, seniority=None):
         final_query = query
@@ -24,25 +27,27 @@ class AdzunaJobFinder():
             final_query = f"{seniority} {query}"
 
         params = {
-            "app_id": self.app_id,
-            "app_key": self.app_key,
             "results_per_page": result_per_page,
             "what": final_query,
             "content-type": "application/json"
         }
 
-        print(f"Search engine searching for {final_query} in {self.country}")
+        logger.info("Searching for %s in %s", final_query, self.country)
 
         try:
-            response = requests.get(self.base_url, params=params)
+            response = requests.get(
+                self.base_url,
+                params=params,
+                auth=(self.app_id, self.app_key)
+            )
 
             if response.status_code == 200:
-                print("things are ok")
+                logger.debug("Adzuna search successful")
             if response.status_code == 401:
-                print("Adzuna Error: 401 Unauthorized (Check API keys)")
+                logger.error("Adzuna Error: 401 Unauthorized (Check API keys)")
                 return pd.DataFrame()
             if response.status_code == 429:
-                print("Limit reached")
+                logger.warning("Adzuna rate limit reached")
 
             response.raise_for_status()
             data = response.json()
@@ -57,7 +62,7 @@ class AdzunaJobFinder():
                     try:
                         final_description = self.translator.translate(raw_description[:4999])
                     except Exception as trans_error:
-                        print(f"Traslation failed with error: {trans_error}")
+                        logger.warning("Translation failed: %s", trans_error)
 
                 jobs.append({
                     "title": item.get("title"),
@@ -69,14 +74,14 @@ class AdzunaJobFinder():
                 })
 
             if jobs:
-                print(f"Engine found {len(jobs)} jobs.")
+                logger.info("Found %d jobs", len(jobs))
             else:
-                print("No jobs found by the Engine")
-            
+                logger.info("No jobs found")
+
             return pd.DataFrame(jobs)
-        
+
         except Exception as e:
-            print(f"Adzuna connection error: {e}")
+            logger.error("Adzuna connection error: %s", e)
             return pd.DataFrame()
         
 if __name__=="__main__":

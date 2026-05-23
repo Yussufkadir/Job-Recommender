@@ -1,6 +1,8 @@
-import redis 
+import redis
+import os
 
-redis_client = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+redis_client = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 def user_app_summary_key(user_id: int) -> str:
     return f"user:{user_id}:applications:summary"

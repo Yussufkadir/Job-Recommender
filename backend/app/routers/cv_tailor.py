@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends, Request
 from ..services.file_processor import extract_text_from_file
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
 from ..services.pdf_generator import generate_pdf_from_tailoring
 from ..core.security import get_current_user
@@ -8,21 +8,15 @@ from ..models.user import User
 from .auth import limiter
 import os
 import httpx
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-def _resolve_service_url(raw_url: str, route: str) -> str:
-    normalized_url = raw_url.rstrip("/")
-    if normalized_url.endswith(route):
-        return normalized_url
-    return f"{normalized_url}{route}"
-
-
-LLM_SERVICE_URL = _resolve_service_url(
-    os.getenv("LLM_SERVICE_URL", "http://127.0.0.1:8002"),
-    "/cv_tailor"
-)
+LLM_BASE_URL = os.getenv("LLM_SERVICE_URL", "http://127.0.0.1:8002").rstrip("/")
 RECOMMENDER_URL = os.getenv("RECOMMENDER_URL", "http://127.0.0.1:8001").rstrip("/")
+
 MAX_CV_TEXT_LENGTH = 100_000
 MAX_JOB_DESCRIPTION_LENGTH = 20_000
 
@@ -52,13 +46,14 @@ async def download_tailored_cv(
     )
 
 async def generate_tailored_cv(cv_text: str, job_description: str) -> str:
+    url = f"{LLM_BASE_URL}/cv_tailor"
     async with httpx.AsyncClient(timeout=360.0) as client:
         try:
             payload = {
                 "cv_text": cv_text,
                 "job_description": job_description
             }
-            response = await client.post(LLM_SERVICE_URL, json=payload)
+            response = await client.post(url, json=payload)
             response.raise_for_status()
 
             tailored_cv = response.json().get("tailored_cv", "").strip()
@@ -70,13 +65,13 @@ async def generate_tailored_cv(cv_text: str, job_description: str) -> str:
 
             return tailored_cv
         except httpx.HTTPStatusError as exc:
-            print(f"LLM service error: {exc.response.status_code} {exc.response.text}")
+            logger.error("LLM service error: %s %s", exc.response.status_code, exc.response.text)
             raise HTTPException(
                 status_code=502,
                 detail="CV tailoring service returned an error."
             ) from exc
         except httpx.HTTPError as exc:
-            print(f"Connection error: {exc}")
+            logger.error("Connection error to LLM service: %s", exc)
             raise HTTPException(
                 status_code=503,
                 detail="Could not reach the CV tailoring service."
@@ -146,6 +141,27 @@ async def parse_cv_text(
             if response.status_code == 200:
                 skills = response.json().get("skills", [])
     except Exception as e:
-        print(f"Skill extraction failed: {e}")
+        logger.warning("Skill extraction failed: %s", e)
 
     return {"text": text, "skills": skills}
+
+@router.post("/ats_score")
+@limiter.limit("10/minute")
+async def ats_score_proxy(request: Request, current_user: User = Depends(get_current_user)):
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
+
+    url = f"{LLM_BASE_URL}/ats_score"
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(url, json=body, timeout=600.0)
+            response.raise_for_status()
+            return JSONResponse(content=response.json(), status_code=response.status_code)
+        except httpx.HTTPStatusError as exc:
+            logger.error("LLM service error (ATS): %s %s", exc.response.status_code, exc.response.text)
+            raise HTTPException(status_code=502, detail="ATS scoring service returned an error.")
+        except httpx.HTTPError as exc:
+            logger.error("Connection error (ATS): %s", exc)
+            raise HTTPException(status_code=503, detail="Could not reach the ATS scoring service.")
