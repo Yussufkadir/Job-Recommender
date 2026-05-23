@@ -26,10 +26,6 @@ class AdzunaJobFinder():
         if seniority and seniority.lower() != "all":
             final_query = f"{seniority} {query}"
 
-        url = f"https://api.adzuna.com/v1/api/jobs/{self.country}/search/1?app_id={self.app_id}&app_key={self.app_key}&results_per_page={result_per_page}&what={final_query}&content-type=application/json"
-
-        logger.warning(f"Searching for {final_query} in {self.country}")
-
         params = {
             "app_id": self.app_id,
             "app_key": self.app_key,
@@ -42,8 +38,12 @@ class AdzunaJobFinder():
         logger.info("Searching for %s in %s", final_query, self.country)
 
         try:
-            response = requests.get(url)
-            
+            response = requests.get(
+                self.base_url,
+                params=params,
+                auth=(self.app_id, self.app_key)
+            )
+
             if response.status_code == 200:
                 logger.debug("Adzuna search successful")
             if response.status_code == 401:
