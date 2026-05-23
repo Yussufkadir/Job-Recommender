@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import AppShell from '$lib/components/AppShell.svelte';
-	import { API_BASE, getRecommendations, type Job } from '$lib/api';
+	import { API_BASE, getATSScore, getRecommendations, type Job } from '$lib/api';
 	import {
 		createApplication,
 		getApplications,
@@ -36,6 +36,14 @@
 	let fullName = '';
 	let hydrated = false;
 	let selectedCountries: string[] = ['pl'];
+	let atsJobKey: string | null = null;
+	let atsResult: {
+		score: number;
+		missing_keywords: string[];
+		formatting_issues: string[];
+		suggestions: string[];
+	} | null = null;
+	let atsLoading = false;
 
 	onMount(() => {
 		const unsubscribe = cvWorkspace.subscribe((state) => {
@@ -416,6 +424,25 @@
 			closeApplyPrompt();
 		}
 	}
+
+	async function handleATSScore(job: Job) {
+		atsJobKey = getJobKey(job);     
+		atsResult = null;
+		atsLoading = true;
+		try {
+			atsResult = await getATSScore(cvText, job.description);
+		} catch(err) {
+			console.error(err);
+			atsResult = {
+				score: 0,
+				missing_keywords: [],
+				formatting_issues: [],
+				suggestions: ['Could not retrieve ATS analysis.']
+			};
+		} finally {
+			atsLoading = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -586,6 +613,14 @@
 								<button
 									class="tailor-btn"
 									type="button"
+									on:click={() => handleATSScore(job)}  
+									disabled={atsLoading && atsJobKey == jobKey}
+								>
+									{atsLoading && atsJobKey == jobKey ? 'Analysing...' : 'Check ATS Score'}
+								</button>
+								<button
+									class="tailor-btn"
+									type="button"
 									on:click={() => handleTailorCV(job)}
 									disabled={tailoringJobId === job.title}
 								>
@@ -623,6 +658,33 @@
 										</button>
 									</div>
 									<div class="markdown-content">{tailoredResults[job.title]}</div>
+								</div>
+							{/if}
+							{#if atsResult && atsJobKey === jobKey}
+								<div class="tailored-result">
+									<h4>ATS Analysis</h4>
+									<div class="ats-score">
+										<strong>Score: {atsResult.score}/100</strong>
+									</div>
+									{#if atsResult.missing_keywords?.length}
+										<p><strong>Missing Keywords:</strong> {atsResult.missing_keywords.join(', ')}</p>
+									{/if}
+									{#if atsResult.formatting_issues?.length}
+										<p><strong>Formatting Issues:</strong></p>
+										<ul>
+											{#each atsResult.formatting_issues as issue}
+												<li>{issue}</li>
+											{/each}
+										</ul>
+									{/if}
+									{#if atsResult.suggestions?.length}
+										<p><strong>Suggestions:</strong></p>
+										<ul>
+											{#each atsResult.suggestions as suggestion}
+												<li>{suggestion}</li>
+											{/each}
+										</ul>
+									{/if}
 								</div>
 							{/if}
 						</div>
@@ -675,6 +737,11 @@
 {/if}
 
 <style>
+	.ats-score {
+		font-size: 1.2rem;
+		color: #0f6b53;
+		margin: 0.5rem 0;
+	}
 	.guide-grid {
 		display: grid;
 		grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);

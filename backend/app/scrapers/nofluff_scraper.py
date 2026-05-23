@@ -4,7 +4,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from deep_translator import GoogleTranslator
-import time 
+import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 class NoFluffScrapper:
     def __init__(self):
@@ -12,6 +15,7 @@ class NoFluffScrapper:
         self.options.add_argument("--headless")
         self.options.add_argument("--window-size=1920,1080")
         self.options.add_argument("--log-level=3")
+        self.options.add_argument("--disable-dev-shm-usage")
 
     def find_jobs(self, query, limit=5, seniority=None):
         final_query = query
@@ -21,7 +25,7 @@ class NoFluffScrapper:
         driver = webdriver.Chrome(options=self.options)
         jobs_data = []
 
-        print(f"Scrapper searching for {final_query}...")
+        logger.info("Scraper searching for %s...", final_query)
 
         try:
             url = f"https://nofluffjobs.com/pl/jobs?criteria=keyword%3D'{final_query}'"
@@ -38,7 +42,7 @@ class NoFluffScrapper:
                 cards = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "a.posting-list-item")))
                 links = [card.get_attribute("href") for card in cards[:limit]]
             except:
-                print("No jobs are found by the scrapper")
+                logger.info("No jobs found by scraper")
                 return []
             
             translator = GoogleTranslator(source="auto", target="en")
@@ -73,7 +77,7 @@ class NoFluffScrapper:
                         "link": link,
                         "source": "NoFluffJobs"
                     })
-                    print(f"Scrapped the job: {title}")
+                    logger.info("Scraped job: %s", title)
 
                 except:
                     continue
