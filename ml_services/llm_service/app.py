@@ -22,18 +22,16 @@ if torch.backends.mps.is_available():
 else:
     logger.info("No GPU detected, inference will use CPU")
 
-PHI3_REVISION = os.getenv("PHI3_REVISION", "f9d2efc393b8a8f1b1afb2b3e5c6c6f25be5caaa")
 
 try:
     pipe = pipeline(
         "text-generation",
         model="microsoft/Phi-3-mini-4k-instruct",
-        revision=PHI3_REVISION,
         device=device,
         torch_dtype=torch.float16 if device != "cpu" else torch.float32,
         trust_remote_code=True
     )
-    logger.info("Model loaded successfully (revision: %s)", PHI3_REVISION)
+    logger.info("Model loaded successfully")
 except Exception as e:
     logger.error("Model load failed: %s", e)
     pipe = None
