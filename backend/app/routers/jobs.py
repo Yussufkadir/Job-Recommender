@@ -83,10 +83,9 @@ async def recommend_jobs(
 
     jobs_list = combined_df.to_dict('records')
 
-    rec_client = RecommenderClient()
-    scored_jobs = []
     logger.warning(f"Jobs from Adzuna: {len(jobs_list)}")
-    logger.warning(f"First job: {jobs_list[0] if jobs_list else 'EMPTY'}")
+    if jobs_list:
+        logger.warning(f"First job: {jobs_list[0].get('title', 'N/A')}")
 
     rec_client = RecommenderClient()
     scored_jobs = []
@@ -103,14 +102,6 @@ async def recommend_jobs(
                 scored_jobs.append(job)
         except Exception as e:
             logger.error(f"Scoring failed for job {i+1}: {e}")
-    for job in jobs_list:
-        score = rec_client.get_score(
-            user_skills=payload.skills,
-            job_description=job.get('description', '')
-        )
-        if score > 70:
-            job['match_score'] = score
-            scored_jobs.append(job)
 
     scored_jobs.sort(key=lambda x: x['match_score'], reverse=True)
     return {"jobs": scored_jobs}
