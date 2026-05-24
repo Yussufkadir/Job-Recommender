@@ -2,46 +2,27 @@
 
 An AI-assisted job search workspace built for IT professionals. Upload your CV, extract your skills automatically, find matched roles, tailor your application, and track your pipeline — all in one flow.
 Built as a personal project to go end to end on full-stack ML: custom NER model, Word2Vec knowledge graph, transformer-based CV tailoring, and a complete FastAPI + SvelteKit application.
-Honest status
-The live deployment has constraints. The Adzuna job API does not work reliably on the current hosting provider, and the LLM tailoring service runs slower on free-tier infrastructure than locally. The best experience is running it locally where all services have full resources.
-What works well
 
-CV parsing and skill extraction (fast, custom IT-domain NER model)
-Job-CV similarity scoring via Word2Vec knowledge graph
-Application tracker and pipeline dashboard
-CV export to PDF
+## Honest status
 
-## What is constrained in deployment
-
-Job search depends on Adzuna API availability on the host
-CV tailoring via local LLM is slower on free-tier inference
-
-
-## What the project does
-
-- Parses CVs from PDF and DOCX files
-- Extracts skills with a dedicated NLP service
-- Aggregates job listings from external sources
-- Scores roles against a candidate profile
-- Rewrites CV content for a selected job description
-- Tracks saved applications and pipeline status in a dashboard
-- Exports CV content as a clean PDF
+The live deployment has constraints. The Adzuna job API does not work reliably on the current hosting provider and the LLM tailoring service runs slower on free-tier infrastructure. The best experience is running it locally where all services have full resources.
 
 ## Stack
 
-- Frontend: SvelteKit
-- Backend: FastAPI, SQLAlchemy, JWT auth
-- Recommender service: spaCy NER + Word2Vec similarity scoring
-- Tailoring service: transformer-based text generation
-- Database: SQLite by default
+Frontend: SvelteKit
+Backend: FastAPI, SQLAlchemy, JWT auth
+Recommender service: spaCy NER + Word2Vec similarity scoring
+Tailoring service: transformer-based text generation
+Database: SQLite by default
 
-## Repository structure
+# Repository structure
 
-- `frontend/`: SvelteKit client application
-- `backend/`: FastAPI API, auth, job search, CV parsing, tracker endpoints
-- `ml_services/recommender_service/`: skills extraction and recommendation scoring
-- `ml_services/llm_service/`: CV tailoring service
-- `datasets/`: notebooks and training assets used during model development
+frontend/ — SvelteKit client
+backend/ — API, auth, job search, CV parsing, tracker
+ml_services/recommender_service/ — skill extraction and scoring
+ml_services/llm_service/ — CV tailoring
+datasets/ — notebooks and training assets
+
 
 ## Local development
 
@@ -108,7 +89,3 @@ Frontend values:
 - The recommender service downloads model artifacts on first run.
 - Job search quality depends on external providers and configured API keys.
 - Password reset email delivery requires a valid Resend configuration.
-
-## Status
-
-This repository is structured as a portfolio-ready MVP with separate services for auth, recommendations, CV tailoring, and application tracking.
