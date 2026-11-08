@@ -5,18 +5,32 @@ export const API_BASE =
 const API_URL = `${API_BASE}/api`;
 
 export interface Job {
+	id?: number;
 	title: string;
 	company: string;
 	location: string;
+	other_locations?: string[];
+	other_locations_total?: number;
 	description: string;
 	link: string;
 	source: string;
 	match_score: number;
+	remote?: boolean;
+	posted_at?: string | null;
+	matched_skills?: string[];
+	missing_skills?: string[];
+	score_breakdown?: Partial<Record<'title' | 'skills' | 'semantic' | 'keywords', number>>;
 }
 
 export interface RecommendationResponse {
 	jobs: Job[];
 	message?: string;
+	stats?: {
+		pool_size: number;
+		candidates: number;
+		semantic: boolean;
+		skills: boolean;
+	};
 }
 
 export async function getRecommendations(
@@ -33,7 +47,10 @@ export async function getRecommendations(
 	});
 
 	if (!res.ok) {
-		throw new Error(`API Error: ${res.statusText}`);
+		const data = await res.json().catch(() => ({}));
+		throw new Error(
+			typeof data.detail === 'string' ? data.detail : `Job search failed (${res.status}).`
+		);
 	}
 	return await res.json();
 }

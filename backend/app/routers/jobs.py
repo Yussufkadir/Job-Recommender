@@ -1,152 +1,158 @@
-from fastapi import APIRouter, Depends, Request, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, HTTPException
+from pydantic import BaseModel, Field
+from sqlalchemy import func
+from sqlalchemy.orm import Session
 from typing import List, Optional
-import pandas as pd
+import json
 import logging
+import threading
+import time
 
 from app.routers.auth import limiter
+from app.core.database import get_jobs_db
+from app.core.security import get_current_user
+from app.ingestion.normalize import COUNTRY_NAMES, SUPPORTED_COUNTRIES
+from app.ingestion.pipeline import as_utc, ingest_now
+from app.matching.ranker import rank_jobs
+from app.models.job_posting import IngestionRun, JobPosting
+from app.models.user import User
+from app.sources.job_apis import AdzunaSource, JoobleSource
 
 logger = logging.getLogger(__name__)
-from app.scrapers.job_aggregator import JobAggregator
-from app.services.recommender_client import RecommenderClient
-from app.core.security import get_current_user
-from app.models.user import User
 
 router = APIRouter()
 
-ALLOWED_COUNTRIES = {"pl", "de", "fr", "gb", "us", "nl", "se", "ca", "it"}
-MAX_COUNTRIES_PER_REQUEST = 5
+ALLOWED_COUNTRIES = set(SUPPORTED_COUNTRIES)
+MAX_SKILLS = 50
+MIN_STRONG_MATCHES = 10
+TOP_UP_COUNTRIES = 3
+TOP_UP_COOLDOWN_SECONDS = 6 * 3600
+
+_top_up_lock = threading.Lock()
+_recent_top_ups: dict[tuple[str, str], float] = {}
+
 
 class JobSearchRequest(BaseModel):
-    cv_text: str
+    cv_text: str = ""
     skills: Optional[List[str]] = None
-    location: Optional[str] = "Poland"
+    location: Optional[str] = None 
     seniority: Optional[str] = "All"
     country: Optional[str] = "pl"
     query: Optional[str] = "Software Engineer"
+    remote_only: bool = False
+    limit: int = Field(default=30, ge=1, le=100)
 
-@router.get("/test-recommender")
-async def test_recommender():
-    import httpx
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        r = await client.post(
-            "https://syurmen-recommender-service.hf.space/extract",
-            json={"text": "Python FastAPI Machine Learning"}
-        )
-        return {"status": r.status_code, "skills": r.json()}
 
-@router.post("/recommend")
-@limiter.limit("10/minute")
-async def recommend_jobs(
-    request: Request,
-    payload: JobSearchRequest,
-    current_user: User = Depends(get_current_user)
-):
-    countries = [c.strip() for c in payload.country.split(",") if c.strip()]
-    if not countries:
-        countries = ["pl"]
+def _parse_countries(value: Optional[str]) -> list[str]:
+    countries = list(dict.fromkeys(c.strip().lower() for c in (value or "").split(",") if c.strip())) or ["pl"]
 
     invalid = set(countries) - ALLOWED_COUNTRIES
     if invalid:
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported countries: {', '.join(invalid)}"
+            detail=f"Unsupported countries: {', '.join(sorted(invalid))}"
         )
+    return countries
 
-    if len(countries) > MAX_COUNTRIES_PER_REQUEST:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Maximum {MAX_COUNTRIES_PER_REQUEST} countries per request"
-        )
 
-    all_jobs_dfs = []
-    for country_code in countries:
-        logger.warning(f"Searching country: {country_code}")
-        aggregator = JobAggregator()
-        try:
-            jobs_df = aggregator.get_all_jobs(
-                query=payload.query,
-                user_skills=payload.skills,
-                seniority=payload.seniority,
-                country=country_code
+def _top_up_sources(query: str, countries: list[str]) -> list:
+    if not (AdzunaSource.is_configured() or JoobleSource.is_configured()):
+        return []
+
+    now = time.time()
+    due = []
+    with _top_up_lock:
+        for key in [k for k, at in _recent_top_ups.items() if now - at > TOP_UP_COOLDOWN_SECONDS]:
+            del _recent_top_ups[key]
+        for country in countries[:TOP_UP_COUNTRIES]:
+            key = (query.lower(), country)
+            if key not in _recent_top_ups:
+                _recent_top_ups[key] = now
+                due.append(country)
+
+    sources = []
+    for country in due:
+        if AdzunaSource.is_configured():
+            sources.append(AdzunaSource(country, pages=1, category=None, what=query))
+        if JoobleSource.is_configured():
+            sources.append(JoobleSource(query, COUNTRY_NAMES[country], country))
+    return sources
+
+
+@router.post("/recommend")
+@limiter.limit("20/minute")
+def recommend_jobs(
+    request: Request,
+    payload: JobSearchRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_jobs_db),
+    current_user: User = Depends(get_current_user)
+):
+    countries = _parse_countries(payload.country)
+    query = (payload.query or "").strip()[:200]
+    skills = list(dict.fromkeys(s.strip() for s in payload.skills or [] if s and s.strip()))[:MAX_SKILLS]
+
+    result = rank_jobs(
+        db,
+        query=query,
+        skills=skills,
+        countries=countries,
+        seniority=payload.seniority,
+        remote_only=payload.remote_only,
+        limit=payload.limit,
+    )
+
+    messages = []
+    if result.pool_size == 0 and db.query(JobPosting.id).first() is None:
+        messages.append("The job index is still being built. Please try again in a few minutes.")
+    elif not result.jobs:
+        messages.append("No jobs matched this search. Try a broader title, more countries, or 'All Levels'.")
+
+    if query and result.strong_title_matches < MIN_STRONG_MATCHES:
+        top_up = _top_up_sources(query, countries)
+        if top_up:
+            background_tasks.add_task(ingest_now, top_up)
+            messages.append(
+                f"Looking for more \"{query}\" jobs from live job search APIs. "
+                "Search again in a minute or two to see them."
             )
-            logger.warning(f"Country {country_code}: {len(jobs_df)} jobs found")
-            if not jobs_df.empty:
-                all_jobs_dfs.append(jobs_df)
-        except Exception as e:
-            logger.error(f"Search failed for {country_code}: {e}")
-            continue
 
-    logger.warning(f"Total DataFrames collected: {len(all_jobs_dfs)}")
+    if skills and not result.used_skills:
+        messages.append("Skill matching is unavailable right now, so jobs are ranked by title and description only.")
 
-    if not all_jobs_dfs:
-        logger.warning("No Adzuna results, returning demo jobs")
-        demo_jobs = [
-            {
-                "title": "Senior Software Engineer",
-                "company": "TechCorp Poland",
-                "location": "Warsaw, Poland",
-                "description": "Looking for an experienced Python developer with FastAPI, Docker, and cloud deployment skills. Must have experience building RESTful APIs and working with relational databases.",
-                "link": "https://www.linkedin.com/jobs/",
-                "source": "Demo",
-                "match_score": 92
-            },
-            {
-                "title": "Machine Learning Engineer",
-                "company": "AI Solutions GmbH",
-                "location": "Berlin, Germany",
-                "description": "Seeking ML engineer with experience in NLP, transformer models, and production deployment. Knowledge of PyTorch, HuggingFace, and MLOps required.",
-                "link": "https://www.linkedin.com/jobs/",
-                "source": "Demo",
-                "match_score": 88
-            },
-            {
-                "title": "Full Stack Developer",
-                "company": "StartupXYZ",
-                "location": "Remote, EU",
-                "description": "Full stack role with Svelte frontend and Python/FastAPI backend. Experience with SQLite, authentication systems, and cloud deployment on Render/Vercel.",
-                "link": "https://www.linkedin.com/jobs/",
-                "source": "Demo",
-                "match_score": 85
-            },
-            {
-                "title": "Junior Data Scientist",
-                "company": "DataDriven Inc",
-                "location": "Amsterdam, Netherlands",
-                "description": "Entry-level data science position. Python, pandas, scikit-learn required. Will work on recommendation systems and NLP projects.",
-                "link": "https://www.linkedin.com/jobs/",
-                "source": "Demo",
-                "match_score": 78
-            }
-        ]
-        return {"jobs": demo_jobs}
+    response = {
+        "jobs": result.jobs,
+        "stats": {
+            "pool_size": result.pool_size,
+            "candidates": result.candidates,
+            "semantic": result.used_semantic,
+            "skills": result.used_skills,
+        },
+    }
+    if messages:
+        response["message"] = " ".join(messages)
+    return response
 
-    logger.warning("Concatenating DataFrames...")
-    combined_df = pd.concat(all_jobs_dfs, ignore_index=True)
-    logger.warning(f"Combined shape: {combined_df.shape}")
-    combined_df = combined_df.drop_duplicates(subset=["link"])
 
-    jobs_list = combined_df.to_dict('records')
-
-    logger.warning(f"Jobs from Adzuna: {len(jobs_list)}")
-    if jobs_list:
-        logger.warning(f"First job: {jobs_list[0].get('title', 'N/A')}")
-
-    rec_client = RecommenderClient()
-    scored_jobs = []
-    for i, job in enumerate(jobs_list):
-        logger.warning(f"Scoring job {i+1}/{len(jobs_list)}: {job.get('title', 'N/A')}")
-        try:
-            score = rec_client.get_score(
-                user_skills=payload.skills,
-                job_description=job.get('description', '')
-            )
-            logger.warning(f"Score for job {i+1}: {score}")
-            if score > 70:
-                job['match_score'] = score
-                scored_jobs.append(job)
-        except Exception as e:
-            logger.error(f"Scoring failed for job {i+1}: {e}")
-
-    scored_jobs.sort(key=lambda x: x['match_score'], reverse=True)
-    return {"jobs": scored_jobs}
+@router.get("/index-status")
+def index_status(db: Session = Depends(get_jobs_db), current_user: User = Depends(get_current_user)):
+    by_source = dict(db.query(JobPosting.source, func.count(JobPosting.id)).group_by(JobPosting.source).all())
+    last_run = (
+        db.query(IngestionRun)
+        .filter(IngestionRun.finished_at.isnot(None))
+        .order_by(IngestionRun.finished_at.desc())
+        .first()
+    )
+    running = db.query(IngestionRun.id).filter(IngestionRun.status == "running").first() is not None
+    return {
+        "total_jobs": sum(by_source.values()),
+        "by_source": by_source,
+        "with_skills": db.query(JobPosting.id).filter(JobPosting.skills.isnot(None)).count(),
+        "with_embeddings": db.query(JobPosting.id).filter(JobPosting.embedding.isnot(None)).count(),
+        "ingestion_running": running,
+        "last_run": {
+            "finished_at": as_utc(last_run.finished_at).isoformat(),
+            "status": last_run.status,
+            "summary": json.loads(last_run.stats or "{}").get("enrichment"),
+        } if last_run else None,
+    }

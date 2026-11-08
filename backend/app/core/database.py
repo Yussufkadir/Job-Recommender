@@ -62,3 +62,35 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def _resolve_sqlite_url(database_url: str) -> str:
+    """Anchor relative SQLite paths to backend/, so the server and the collector CLI
+    use the same file whichever directory they're started from."""
+    url = make_url(database_url)
+    if url.get_backend_name() != "sqlite" or not url.database or url.database == ":memory:":
+        return database_url
+    path = Path(url.database)
+    if not path.is_absolute():
+        path = (BASE_DIR / path).resolve()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return str(url.set(database=str(path)))
+
+
+_jobs_url = _resolve_sqlite_url(settings.JOBS_DATABASE_URL)
+jobs_engine = create_engine(
+    _jobs_url,
+    connect_args={"check_same_thread": False} if _jobs_url.startswith("sqlite") else {},
+    pool_pre_ping=True,
+)
+
+JobsSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=jobs_engine)
+
+JobsBase = declarative_base()
+
+def get_jobs_db():
+    db = JobsSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

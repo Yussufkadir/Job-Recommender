@@ -20,6 +20,16 @@ RECOMMENDER_URL = os.getenv("RECOMMENDER_URL", "http://127.0.0.1:8001").rstrip("
 MAX_CV_TEXT_LENGTH = 100_000
 MAX_JOB_DESCRIPTION_LENGTH = 20_000
 
+def _raise_for_llm_client_error(exc: httpx.HTTPStatusError) -> None:
+    if exc.response.status_code != 400:
+        return
+    try:
+        detail = exc.response.json().get("detail")
+    except ValueError:
+        detail = None
+    if isinstance(detail, str) and detail:
+        raise HTTPException(status_code=400, detail=detail) from exc
+
 class PDFRequest(BaseModel):
     text: str
     name: str | None = None
@@ -66,6 +76,7 @@ async def generate_tailored_cv(cv_text: str, job_description: str) -> str:
             return tailored_cv
         except httpx.HTTPStatusError as exc:
             logger.error("LLM service error: %s %s", exc.response.status_code, exc.response.text)
+            _raise_for_llm_client_error(exc)
             raise HTTPException(
                 status_code=502,
                 detail="CV tailoring service returned an error."
@@ -161,6 +172,7 @@ async def ats_score_proxy(request: Request, current_user: User = Depends(get_cur
             return JSONResponse(content=response.json(), status_code=response.status_code)
         except httpx.HTTPStatusError as exc:
             logger.error("LLM service error (ATS): %s %s", exc.response.status_code, exc.response.text)
+            _raise_for_llm_client_error(exc)
             raise HTTPException(status_code=502, detail="ATS scoring service returned an error.")
         except httpx.HTTPError as exc:
             logger.error("Connection error (ATS): %s", exc)
