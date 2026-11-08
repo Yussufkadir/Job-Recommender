@@ -2,23 +2,24 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from app.core.database import engine, Base
-from app.models import user, job_application
+from app.core.database import engine, Base, jobs_engine, JobsBase
+from app.models import user, job_application, job_posting  # noqa: F401 (registers tables)
 import os
 from app.routers import auth, cv_tailor, jobs, analytics, applications
+from app.ingestion import scheduler as ingestion_scheduler
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 load_dotenv()
 
 Base.metadata.create_all(bind=engine)
-
-from app.models.user import PasswordResetToken
-from app.models.user import User
+JobsBase.metadata.create_all(bind=jobs_engine)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    ingestion_scheduler.start()
     yield
+    ingestion_scheduler.stop()
 
 app = FastAPI(
     title = "Job Recommendation Platform",

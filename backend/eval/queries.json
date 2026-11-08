@@ -1,0 +1,15 @@
+[
+  {"id": "backend-python", "query": "Backend Engineer", "skills": ["Python", "Django", "PostgreSQL", "Docker", "AWS"], "countries": ["de", "gb", "nl"], "seniority": "All"},
+  {"id": "data-scientist", "query": "Data Scientist", "skills": ["Python", "SQL", "Pandas", "Machine Learning", "Statistics"], "countries": ["de", "gb", "pl"], "seniority": "All"},
+  {"id": "frontend-react", "query": "Frontend Developer", "skills": ["React", "TypeScript", "JavaScript", "CSS"], "countries": ["pl", "de", "gb", "nl"], "seniority": "All"},
+  {"id": "ml-engineer", "query": "Machine Learning Engineer", "skills": ["Python", "PyTorch", "TensorFlow", "MLOps", "Docker"], "countries": ["gb", "de", "fr"], "seniority": "All"},
+  {"id": "devops", "query": "DevOps Engineer", "skills": ["Kubernetes", "Terraform", "AWS", "CI/CD", "Linux"], "countries": ["de", "gb", "pl"], "seniority": "All"},
+  {"id": "data-engineer", "query": "Data Engineer", "skills": ["Python", "SQL", "Spark", "Airflow", "AWS"], "countries": ["gb", "de", "nl"], "seniority": "All"},
+  {"id": "product-manager", "query": "Product Manager", "skills": ["Product Strategy", "Roadmapping", "Analytics", "Agile"], "countries": ["gb", "de"], "seniority": "All"},
+  {"id": "junior-java", "query": "Java Developer", "skills": ["Java", "Spring Boot", "SQL", "Git"], "countries": ["pl", "de"], "seniority": "Junior"},
+  {"id": "senior-fullstack", "query": "Full Stack Engineer", "skills": ["Node.js", "React", "TypeScript", "PostgreSQL"], "countries": ["gb", "us"], "seniority": "Senior"},
+  {"id": "sre", "query": "Site Reliability Engineer", "skills": ["Kubernetes", "Go", "Prometheus", "Linux"], "countries": ["gb", "de", "us"], "seniority": "All"},
+  {"id": "security", "query": "Security Engineer", "skills": ["Cloud Security", "AWS", "Python", "SIEM"], "countries": ["gb", "de", "us"], "seniority": "All"},
+  {"id": "mobile", "query": "Mobile Developer", "skills": ["Kotlin", "Android", "Swift", "iOS"], "countries": ["de", "pl", "gb"], "seniority": "All"},
+  {"id": "data-analyst", "query": "Data Analyst", "skills": ["SQL", "Excel", "Tableau", "Python"], "countries": ["gb", "de", "nl", "pl"], "seniority": "All"}
+]

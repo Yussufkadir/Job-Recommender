@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import AppShell from '$lib/components/AppShell.svelte';
 	import { getApplications, updateApplicationStatus, deleteApplication} from '$lib/api/applications';
 	import type { Application, ApplicationStatus } from '$lib/types/application';
@@ -17,7 +18,7 @@
 	let loading = true;
 	let error = '';
 	let filter: ApplicationStatus | 'all' = 'all';
-	let deletingIDs: Set<number> = new Set();
+	const deletingIDs = new SvelteSet<number>();
 
 	$: filtered =
 		filter === 'all'
@@ -65,8 +66,7 @@
 			console.error(err);
 			error = 'Failed to delete the application';
 		} finally {
-			deletingIDs.delete(app.id)
-			deletingIDs = new Set(deletingIDs);
+			deletingIDs.delete(app.id);
 		}
 	}
 

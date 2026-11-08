@@ -24,6 +24,8 @@
 	let loading = false;
 	let parsingCv = false;
 	let error = '';
+	let resultsNotice = '';
+	let poolSize = 0;
 	let cvFile: File | null = null;
 	let tailoringJobId: string | null = null;
 	let tailoredResults: Record<string, string> = {};
@@ -191,6 +193,7 @@
 
 		loading = true;
 		error = '';
+		resultsNotice = '';
 		jobs = [];
 
 		const skillsArray = parseSkillsInput(skillsInput);
@@ -198,9 +201,15 @@
 		try {
 			const response = await getRecommendations(cvText, query, skillsArray, seniorityLevel, countryParam);
 			jobs = response.jobs;
+			resultsNotice = response.message ?? '';
+			poolSize = response.stats?.pool_size ?? 0;
 		} catch (err) {
 			console.error(err);
-			error = 'Failed to fetch jobs. Please check the backend connection.';
+			// fetch() throws TypeError when the backend can't be reached at all.
+			error =
+				err instanceof Error && !(err instanceof TypeError)
+					? err.message
+					: 'Failed to fetch jobs. Please check the backend connection.';
 		} finally {
 			loading = false;
 		}
@@ -212,7 +221,7 @@
 			return;
 		}
 
-		tailoringJobId = job.title;
+		tailoringJobId = getJobKey(job);
 
 		try {
 			const formData = new FormData();
@@ -226,7 +235,7 @@
 
 			if (res.ok) {
 				const data = await res.json();
-				tailoredResults[job.title] = data.tailored_cv;
+				tailoredResults[getJobKey(job)] = data.tailored_cv;
 			} else {
 				const err = await res.json();
 				alert(`CV tailoring failed: ${err.detail || 'Unknown error'}`);
@@ -273,6 +282,50 @@
 		} catch {
 			return '#';
 		}
+	}
+
+	const SOURCE_LABELS: Record<string, string> = {
+		greenhouse: 'Company careers page',
+		lever: 'Company careers page',
+		ashby: 'Company careers page',
+		adzuna: 'Via Adzuna',
+		arbeitnow: 'Via Arbeitnow',
+		remotive: 'Via Remotive',
+		remoteok: 'Via Remote OK',
+		jooble: 'Via Jooble'
+	};
+
+	const SCORE_LABELS: Record<string, string> = {
+		title: 'Title',
+		skills: 'Skills',
+		semantic: 'Description',
+		keywords: 'Keywords'
+	};
+
+	function getSourceLabel(source: string) {
+		return SOURCE_LABELS[source] ?? source;
+	}
+
+	function formatPostedDate(value: string) {
+		const days = Math.floor((Date.now() - new Date(value).getTime()) / 86_400_000);
+		if (Number.isNaN(days)) return '';
+		if (days <= 0) return 'Posted today';
+		if (days === 1) return 'Posted yesterday';
+		if (days < 14) return `Posted ${days} days ago`;
+		if (days < 60) return `Posted ${Math.floor(days / 7)} weeks ago`;
+		return `Posted ${Math.floor(days / 30)} months ago`;
+	}
+
+	function formatOtherLocations(job: Job) {
+		const shown = job.other_locations ?? [];
+		const more = (job.other_locations_total ?? shown.length) - shown.length;
+		return `Also in: ${shown.join(' · ')}${more > 0 ? ` (+${more} more)` : ''}`;
+	}
+
+	function formatScoreBreakdown(job: Job) {
+		return Object.entries(job.score_breakdown ?? {})
+			.map(([name, value]) => `${SCORE_LABELS[name] ?? name}: ${value}%`)
+			.join(' · ');
 	}
 
 	function getJobKey(job: Job) {
@@ -437,7 +490,7 @@
 				score: 0,
 				missing_keywords: [],
 				formatting_issues: [],
-				suggestions: ['Could not retrieve ATS analysis.']
+				suggestions: [err instanceof Error ? err.message : 'Could not retrieve ATS analysis.']
 			};
 		} finally {
 			atsLoading = false;
@@ -578,9 +631,15 @@
 					<h2>Recommended roles</h2>
 				</div>
 				{#if jobs.length > 0}
-					<span class="results-count">{jobs.length} matches</span>
+					<span class="results-count">
+						{jobs.length} matches{poolSize ? ` from ${poolSize.toLocaleString()} jobs` : ''}
+					</span>
 				{/if}
 			</div>
+
+			{#if resultsNotice}
+				<p class="results-notice">{resultsNotice}</p>
+			{/if}
 
 			{#if jobs.length > 0}
 				<div class="jobs-grid">
@@ -591,15 +650,45 @@
 								<div>
 									<h3>{job.title}</h3>
 									<p class="company">{job.company} • {job.location}</p>
+									{#if job.other_locations?.length}
+										<p class="also-in">{formatOtherLocations(job)}</p>
+									{/if}
+									<p class="job-meta">
+										{#if job.remote}<span class="remote-tag">Remote</span>{/if}
+										<span>{getSourceLabel(job.source)}</span>
+										{#if job.posted_at}<span>• {formatPostedDate(job.posted_at)}</span>{/if}
+									</p>
 								</div>
 								<span
 									class="score-badge"
-									style={`background: ${job.match_score > 70 ? '#e7f7ee' : '#fff4df'}; color: ${job.match_score > 70 ? '#0f6b53' : '#9a6700'}`}
+									title={formatScoreBreakdown(job)}
+									style={`background: ${job.match_score >= 60 ? '#e7f7ee' : '#fff4df'}; color: ${job.match_score >= 60 ? '#0f6b53' : '#9a6700'}`}
 								>
 									{job.match_score}% Match
 								</span>
 							</div>
 							<p class="description">{job.description.slice(0, 180)}...</p>
+
+							{#if job.matched_skills?.length || job.missing_skills?.length}
+								<div class="skill-groups">
+									{#if job.matched_skills?.length}
+										<div class="skill-group">
+											<span class="skill-group-label">You have</span>
+											{#each job.matched_skills as skill (skill)}
+												<span class="skill-chip matched">{skill}</span>
+											{/each}
+										</div>
+									{/if}
+									{#if job.missing_skills?.length}
+										<div class="skill-group">
+											<span class="skill-group-label">Missing</span>
+											{#each job.missing_skills as skill (skill)}
+												<span class="skill-chip missing">{skill}</span>
+											{/each}
+										</div>
+									{/if}
+								</div>
+							{/if}
 
 							<div class="actions">
 								<button
@@ -622,9 +711,9 @@
 									class="tailor-btn"
 									type="button"
 									on:click={() => handleTailorCV(job)}
-									disabled={tailoringJobId === job.title}
+									disabled={tailoringJobId === jobKey}
 								>
-									{tailoringJobId === job.title ? 'Processing...' : 'Tailor CV'}
+									{tailoringJobId === jobKey ? 'Processing...' : 'Tailor CV'}
 								</button>
 								<button
 									class="save-btn"
@@ -646,18 +735,18 @@
 								</p>
 							{/if}
 
-							{#if tailoredResults[job.title]}
+							{#if tailoredResults[jobKey]}
 								<div class="tailored-result">
 									<div class="tailored-header">
 										<h4>Tailored CV</h4>
 										<button
 											class="download-btn"
-											on:click={() => downloadPDF(tailoredResults[job.title])}
+											on:click={() => downloadPDF(tailoredResults[jobKey])}
 										>
 											Download PDF
 										</button>
 									</div>
-									<div class="markdown-content">{tailoredResults[job.title]}</div>
+									<div class="markdown-content">{tailoredResults[jobKey]}</div>
 								</div>
 							{/if}
 							{#if atsResult && atsJobKey === jobKey}
@@ -672,7 +761,7 @@
 									{#if atsResult.formatting_issues?.length}
 										<p><strong>Formatting Issues:</strong></p>
 										<ul>
-											{#each atsResult.formatting_issues as issue}
+											{#each atsResult.formatting_issues as issue, i (i)}
 												<li>{issue}</li>
 											{/each}
 										</ul>
@@ -680,7 +769,7 @@
 									{#if atsResult.suggestions?.length}
 										<p><strong>Suggestions:</strong></p>
 										<ul>
-											{#each atsResult.suggestions as suggestion}
+											{#each atsResult.suggestions as suggestion, i (i)}
 												<li>{suggestion}</li>
 											{/each}
 										</ul>
@@ -690,7 +779,7 @@
 						</div>
 					{/each}
 				</div>
-			{:else if !loading && !error}
+			{:else if !loading && !error && !resultsNotice}
 				<div class="empty-state">
 					<h3>Your matches will appear here.</h3>
 					<p>Once you run a search, this panel becomes the place to compare and tailor results.</p>
@@ -945,6 +1034,14 @@
 		margin-bottom: 1rem;
 	}
 
+	.results-notice {
+		background: #fff4df;
+		color: #9a6700;
+		border-radius: 12px;
+		padding: 0.75rem 1rem;
+		margin: 0 0 1rem;
+	}
+
 	.results-section {
 		flex: 2;
 	}
@@ -1003,6 +1100,69 @@
 		color: #586f86;
 		line-height: 1.6;
 		margin-bottom: 1.5rem;
+	}
+
+	.also-in {
+		color: #6b7f94;
+		font-size: 0.85rem;
+		margin: -0.6rem 0 1rem 0;
+	}
+
+	.job-meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		align-items: center;
+		color: #6b7f94;
+		font-size: 0.85rem;
+		margin: -0.6rem 0 1rem 0;
+	}
+
+	.remote-tag {
+		background: #e8f0fb;
+		color: #2b5c99;
+		border-radius: 999px;
+		padding: 0.15rem 0.6rem;
+		font-weight: 600;
+	}
+
+	.skill-groups {
+		display: grid;
+		gap: 0.5rem;
+		margin: -0.75rem 0 1.25rem 0;
+	}
+
+	.skill-group {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem;
+		align-items: center;
+	}
+
+	.skill-group-label {
+		font-size: 0.78rem;
+		font-weight: 700;
+		color: #6b7f94;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		margin-right: 0.25rem;
+	}
+
+	.skill-chip {
+		border-radius: 999px;
+		padding: 0.2rem 0.65rem;
+		font-size: 0.82rem;
+		font-weight: 600;
+	}
+
+	.skill-chip.matched {
+		background: #e7f7ee;
+		color: #0f6b53;
+	}
+
+	.skill-chip.missing {
+		background: #f1f4f8;
+		color: #586f86;
 	}
 
 	.actions {
