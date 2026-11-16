@@ -125,6 +125,27 @@ def test_same_job_in_several_cities_is_shown_once(db):
     assert any(job["company"] == "Acme" for job in result.jobs)
 
 
+def test_jobs_in_another_language_rank_below_same_language_jobs(db):
+    upsert_jobs(db, [
+        raw("go", "Backend Engineer", "Berlin, Germany", "Backend services in Go. Python and Django welcome.",
+            company="Gopher"),
+        raw("go-only", "Backend Engineer", "Berlin, Germany", "Backend services written in Go.",
+            company="Gopher Only"),
+        raw("py", "Backend Engineer", "Berlin, Germany", "Backend services in Python.", company="Snake"),
+    ])
+    job_index.invalidate()
+
+    def scores(**kwargs):
+        result = rank_jobs(db, "Backend Engineer", ["Python", "Django"], ["de"], client=FakeRecommender(), **kwargs)
+        return {job["company"]: job["match_score"] for job in result.jobs}
+
+    with_penalty, without = scores(), scores(language_penalty=0.0)
+    assert min(with_penalty, key=with_penalty.get) == "Gopher Only"  # Go only: ranked last
+    assert with_penalty["Gopher Only"] < without["Gopher Only"]
+    assert with_penalty["Gopher"] == without["Gopher"]  # mentions Python too: not penalized
+    assert with_penalty["Snake"] == without["Snake"]
+
+
 def test_failed_translation_is_retried_on_next_run(db, monkeypatch):
     monkeypatch.setattr("app.ingestion.pipeline.TRANSLATE", True)
     german = raw("g", "Softwareentwickler", "Berlin",

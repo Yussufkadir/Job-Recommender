@@ -1,0 +1,137 @@
+{
+  "saved_at": "2026-11-16_233127",
+  "git_commit": "9bb47f6-dirty",
+  "snapshot_taken": "2026-10-22 12:02 UTC",
+  "queries_judged": 7,
+  "judgments": 242,
+  "variants": {
+    "title_only": {
+      "available": true,
+      "precision_at_10": 0.7285714285714285,
+      "ndcg_at_10": 0.6731881341198585,
+      "mrr": 1.0,
+      "judged_at_10": 1.0
+    },
+    "keywords_only": {
+      "available": true,
+      "precision_at_10": 0.7428571428571429,
+      "ndcg_at_10": 0.6779131612681988,
+      "mrr": 0.8571428571428571,
+      "judged_at_10": 1.0
+    },
+    "skills_only": {
+      "available": true,
+      "precision_at_10": 0.5857142857142857,
+      "ndcg_at_10": 0.47151149815278387,
+      "mrr": 0.7619047619047619,
+      "judged_at_10": 1.0
+    },
+    "semantic_only": {
+      "available": true,
+      "precision_at_10": 0.7142857142857143,
+      "ndcg_at_10": 0.5675276066588119,
+      "mrr": 0.8571428571428571,
+      "judged_at_10": 1.0
+    },
+    "title+keywords": {
+      "available": true,
+      "precision_at_10": 0.7571428571428571,
+      "ndcg_at_10": 0.6659767044821702,
+      "mrr": 0.9285714285714286,
+      "judged_at_10": 1.0
+    },
+    "hybrid_no_semantic": {
+      "available": true,
+      "precision_at_10": 0.7285714285714285,
+      "ndcg_at_10": 0.6252355436494843,
+      "mrr": 0.8333333333333334,
+      "judged_at_10": 1.0
+    },
+    "hybrid_no_language": {
+      "available": true,
+      "precision_at_10": 0.8285714285714285,
+      "ndcg_at_10": 0.7295868500140995,
+      "mrr": 0.9285714285714286,
+      "judged_at_10": 1.0
+    },
+    "hybrid": {
+      "available": true,
+      "precision_at_10": 0.8285714285714285,
+      "ndcg_at_10": 0.7697529140348499,
+      "mrr": 0.9285714285714286,
+      "judged_at_10": 1.0
+    }
+  },
+  "per_query_ndcg_at_10": {
+    "backend-python": {
+      "title_only": 0.4066972554326934,
+      "keywords_only": 0.6467344933582715,
+      "skills_only": 0.5613909596287923,
+      "semantic_only": 0.5065714593954073,
+      "title+keywords": 0.4066972554326934,
+      "hybrid_no_semantic": 0.33333333333333337,
+      "hybrid_no_language": 0.33333333333333337,
+      "hybrid": 0.6241410282065163
+    },
+    "data-scientist": {
+      "title_only": 1.0,
+      "keywords_only": 1.0,
+      "skills_only": 0.48355170100070877,
+      "semantic_only": 0.570895666663293,
+      "title+keywords": 1.0,
+      "hybrid_no_semantic": 1.0,
+      "hybrid_no_language": 1.0,
+      "hybrid": 1.0
+    },
+    "frontend-react": {
+      "title_only": 0.3978495730084959,
+      "keywords_only": 0.3066372048053367,
+      "skills_only": 0.48019602489379126,
+      "semantic_only": 0.3847807864808973,
+      "title+keywords": 0.3729468075010768,
+      "hybrid_no_semantic": 0.27819816961795096,
+      "hybrid_no_language": 0.655853291175062,
+      "hybrid": 0.655853291175062
+    },
+    "ml-engineer": {
+      "title_only": 1.0,
+      "keywords_only": 1.0,
+      "skills_only": 0.41363560333517335,
+      "semantic_only": 0.4236766450873189,
+      "title+keywords": 1.0,
+      "hybrid_no_semantic": 1.0,
+      "hybrid_no_language": 1.0,
+      "hybrid": 1.0
+    },
+    "devops": {
+      "title_only": 0.3748531800194486,
+      "keywords_only": 0.3654676721956359,
+      "skills_only": 0.11492008751406496,
+      "semantic_only": 0.860327308018974,
+      "title+keywords": 0.44129189029482796,
+      "hybrid_no_semantic": 0.28641336549782553,
+      "hybrid_no_language": 0.4878786444456864,
+      "hybrid": 0.4878786444456864
+    },
+    "junior-java": {
+      "title_only": 0.5965377185773227,
+      "keywords_only": 0.48331483694589444,
+      "skills_only": 0.47938213678331176,
+      "semantic_only": 0.6371523797895855,
+      "title+keywords": 0.48331483694589444,
+      "hybrid_no_semantic": 0.47870393709728,
+      "hybrid_no_language": 0.6300426811446146,
+      "hybrid": 0.6203974344166847
+    },
+    "data-analyst": {
+      "title_only": 0.9363792118010482,
+      "keywords_only": 0.9432379215722527,
+      "skills_only": 0.7675039739136449,
+      "semantic_only": 0.5892890011762073,
+      "title+keywords": 0.9575861412006988,
+      "hybrid_no_semantic": 1.0,
+      "hybrid_no_language": 1.0,
+      "hybrid": 1.0
+    }
+  }
+}
