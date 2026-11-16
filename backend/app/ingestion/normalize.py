@@ -12,15 +12,21 @@ COUNTRY_NAMES = {
     "nl": "Netherlands", "se": "Sweden", "ca": "Canada", "it": "Italy",
 }
 
+# English names plus local and German spellings ("Nederland", "Niederlande"): some feeds, like
+# Arbeitnow, write locations in the local language, and an unrecognized country falls back to the
+# feed's default (Germany).
 _PLACE_TERMS = {
-    "pl": ["poland", "polska", "warsaw", "warszawa", "krakow", "kraków", "cracow", "wroclaw", "wrocław",
-           "gdansk", "gdańsk", "poznan", "poznań", "lodz", "łódź", "katowice", "gdynia", "lublin"],
-    "de": ["germany", "deutschland", "berlin", "munich", "münchen", "muenchen", "hamburg", "frankfurt",
-           "cologne", "köln", "koeln", "stuttgart", "düsseldorf", "dusseldorf", "leipzig", "dresden",
-           "nuremberg", "nürnberg", "hannover", "bonn", "karlsruhe", "mannheim", "essen", "dortmund"],
-    "fr": ["france", "paris", "lyon", "marseille", "toulouse", "nantes", "lille", "bordeaux", "nice",
-           "montpellier", "grenoble", "rennes", "strasbourg", "sophia antipolis"],
+    "pl": ["poland", "polska", "polen", "warsaw", "warszawa", "krakow", "kraków", "cracow", "wroclaw",
+           "wrocław", "gdansk", "gdańsk", "poznan", "poznań", "lodz", "łódź", "katowice", "gdynia",
+           "lublin"],
+    "de": ["germany", "deutschland", "niemcy", "berlin", "munich", "münchen", "muenchen", "hamburg",
+           "frankfurt", "cologne", "köln", "koeln", "stuttgart", "düsseldorf", "dusseldorf", "leipzig",
+           "dresden", "nuremberg", "nürnberg", "hannover", "bonn", "karlsruhe", "mannheim", "essen",
+           "dortmund"],
+    "fr": ["france", "frankreich", "paris", "lyon", "marseille", "toulouse", "nantes", "lille", "bordeaux",
+           "nice", "montpellier", "grenoble", "rennes", "strasbourg", "sophia antipolis"],
     "gb": ["united kingdom", "uk", "u.k.", "england", "scotland", "wales", "great britain", "britain",
+           "vereinigtes königreich", "großbritannien", "grossbritannien", "royaume-uni",
            "london", "manchester", "edinburgh", "glasgow", "birmingham", "bristol", "oxford", "leeds",
            "belfast", "cardiff", "reading", "brighton", "newcastle", "sheffield", "nottingham"],
     "us": ["united states", "usa", "u.s.", "us", "new york", "nyc", "san francisco", "seattle", "austin",
@@ -34,14 +40,15 @@ _PLACE_TERMS = {
            "new mexico", "north carolina", "north dakota", "ohio", "oklahoma", "oregon",
            "pennsylvania", "rhode island", "south carolina", "south dakota", "tennessee", "texas",
            "utah", "vermont", "virginia", "washington", "west virginia", "wisconsin", "wyoming"],
-    "nl": ["netherlands", "the netherlands", "holland", "amsterdam", "rotterdam", "utrecht", "eindhoven",
-           "the hague", "den haag", "delft", "groningen"],
-    "se": ["sweden", "sverige", "stockholm", "gothenburg", "göteborg", "goteborg", "malmö", "malmo",
-           "uppsala", "lund"],
+    "nl": ["netherlands", "the netherlands", "nederland", "niederlande", "holland", "amsterdam", "rotterdam",
+           "utrecht", "eindhoven", "the hague", "den haag", "delft", "groningen", "zwolle", "haarlem",
+           "leiden", "arnhem", "nijmegen", "tilburg", "breda", "maastricht", "enschede", "amersfoort"],
+    "se": ["sweden", "sverige", "schweden", "stockholm", "gothenburg", "göteborg", "goteborg", "malmö",
+           "malmo", "uppsala", "lund"],
     "ca": ["canada", "toronto", "vancouver", "montreal", "montréal", "ottawa", "calgary", "waterloo",
            "edmonton", "quebec", "québec"],
-    "it": ["italy", "italia", "milan", "milano", "rome", "roma", "turin", "torino", "bologna", "florence",
-           "firenze", "naples", "napoli"],
+    "it": ["italy", "italia", "italien", "milan", "milano", "rome", "roma", "turin", "torino", "bologna",
+           "florence", "firenze", "naples", "napoli"],
 }
 _REGION_TERMS = {
     "europe": EUROPE, "european union": EUROPE, "eu": EUROPE, "emea": EUROPE, "eea": EUROPE,
@@ -53,8 +60,9 @@ _UNSUPPORTED_PLACE_TERMS = [
     "switzerland", "schweiz", "suisse", "zurich", "zürich", "basel", "bern", "geneva", "genève",
     "lausanne", "winterthur", "schlieren", "zug", "lucerne", "luzern", "st. gallen",
     "austria", "österreich", "vienna", "wien", "graz", "linz", "salzburg", "innsbruck",
-    "liechtenstein", "luxembourg", "belgium", "brussels", "denmark", "copenhagen", "spain", "madrid",
-    "barcelona", "portugal", "lisbon", "czech", "prague", "ireland", "dublin",
+    "liechtenstein", "luxembourg", "belgium", "belgië", "belgique", "belgien", "brussels", "denmark",
+    "danmark", "dänemark", "copenhagen", "spain", "españa", "spanien", "madrid", "barcelona", "portugal",
+    "lisbon", "czech", "czechia", "česko", "prague", "ireland", "irland", "dublin", "svizzera",
 ]
 
 _US_STATES = {
@@ -152,11 +160,38 @@ def _normalize_words(value: str) -> str:
     return re.sub(r"[^a-z0-9+#]+", " ", value.lower()).strip()
 
 
+_TITLE_PARTS = re.compile(r"\s+[-–—]\s+|\s*[|,/()]\s*")
+_LOCATION_FILLER = re.compile(
+    r"\b(?:remote|hybrid|on-?site|in-office|office|based|area|metro|region|time ?zones?|only|and|or)\b|&"
+)
+_ALL_PLACE_PATTERNS = [*_PLACE_PATTERNS.values(), *_REGION_PATTERNS.values(), _UNSUPPORTED_PLACE_PATTERN]
+
+
+def _is_location(part: str) -> bool:
+    """True for a title part that names only places: "Germany", "Remote", "Berlin / Munich", "NY"."""
+    part = part.strip()
+    if part in _US_STATES or part in _CA_PROVINCES:
+        return True
+    lowered = part.lower()
+    for pattern in _ALL_PLACE_PATTERNS:
+        lowered = pattern.sub(" ", lowered)
+    return not re.search(r"\w", _LOCATION_FILLER.sub(" ", lowered))
+
+
+def _title_without_locations(title: str) -> str:
+    """Drop the location parts of a title: "Staff Engineer - Alerting | Germany | Remote" and
+    "Staff Engineer - Alerting | Spain | Remote" are one job posted once per country. The first
+    part is the job itself and always stays."""
+    first, *rest = _TITLE_PARTS.split(title)
+    return " ".join([first, *(part for part in rest if not _is_location(part))])
+
+
 def dedupe_key(title: str, company: str) -> str:
-    """Normalized "title|company". Cross-source duplicates are matched on the title part
-    and then compared with same_company(), since boards spell company names differently."""
-    title_part = _normalize_words(_GENDER_TAGS.sub(" ", html.unescape(title)))
-    return f"{title_part}|{company_key(company)}"[:512]
+    """Normalized "title|company", ignoring locations in the title. Cross-source duplicates are
+    matched on the title part and then compared with same_company(), since boards spell company
+    names differently."""
+    title = _title_without_locations(_GENDER_TAGS.sub(" ", html.unescape(title)))
+    return f"{_normalize_words(title)}|{company_key(company)}"[:512]
 
 
 def clean_title(title: str) -> str:

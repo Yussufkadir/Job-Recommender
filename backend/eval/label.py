@@ -7,9 +7,10 @@ duplicates removed) into eval/judgments.csv. Then you judge each pooled job once
   1  partly relevant: right field, but off on level, stack or focus
   0  not relevant
 
-Answers are saved immediately, so you can quit (q) and resume any time. Run it again
-after changing the ranking: only jobs that newly reach a top 10 need judging.
-The CSV can also be edited by hand (the relevance column).
+Press d to read the full description (kept in the snapshot even after the posting is taken
+down), o to open the live posting. Answers are saved immediately, so you can quit (q) and
+resume any time. Run it again after changing the ranking: only jobs that newly reach a top 10
+need judging. The CSV can also be edited by hand (the relevance column).
 """
 import argparse
 import json
@@ -60,6 +61,12 @@ def show(job: JobPosting, row: dict, position: int, remaining: int) -> None:
     print(description + "...")
 
 
+def show_full_description(job: JobPosting) -> None:
+    text = " ".join(job.description.split())
+    print("\n" + textwrap.fill(text, width=100))
+    print(f"\n(end of description: {job.title} at {job.company}, {len(text)} characters)")
+
+
 def label(runner: Runner, queries, only: str | None) -> None:
     rows = read_judgment_rows()
     by_id = {query.id: query for query in queries}
@@ -88,8 +95,11 @@ def label(runner: Runner, queries, only: str | None) -> None:
         show(job, row, position, len(pending) - position)
 
         while True:
-            answer = input("Relevance [2/1/0], o = open link, s = skip, q = quit: ").strip().lower()
-            if answer == "o":
+            answer = input("Relevance [2/1/0], d = full description, o = open link, s = skip, q = quit: ")
+            answer = answer.strip().lower()
+            if answer == "d":
+                show_full_description(job)
+            elif answer == "o":
                 webbrowser.open(job.url)
             elif answer in {"0", "1", "2", "s", "q"}:
                 break
@@ -111,6 +121,9 @@ def main() -> None:
     args = parser.parse_args()
 
     queries = load_queries()
+    query_ids = sorted(query.id for query in queries)
+    if args.query is not None and args.query not in query_ids:
+        raise SystemExit(f"Unknown query id '{args.query}'. Valid ids: {', '.join(query_ids)}")
     runner = Runner(open_snapshot())
     print(f"Pooling the top {K} of {len(VARIANTS)} variants for {len(queries)} queries...")
     build_pool(runner, queries)
