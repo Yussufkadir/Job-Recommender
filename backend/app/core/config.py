@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Job recommendation platform"
 
     DATABASE_URL: str = "sqlite:///./local_data/job_recommender.db"
+    JOBS_DATABASE_URL: str = "sqlite:///./jobs.db"
 
     SECRET_KEY: str
     ALGORITHM: str = "HS256"

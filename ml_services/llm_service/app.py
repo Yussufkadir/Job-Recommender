@@ -15,6 +15,12 @@ app = FastAPI()
 MAX_CV_TEXT_LENGTH = 100_000
 MAX_JOB_DESCRIPTION_LENGTH = 20_000
 
+MODEL_CONTEXT_TOKENS = int(os.getenv("LLM_CONTEXT_TOKENS", "4096"))
+TAILOR_MAX_NEW_TOKENS = 1200
+ATS_MAX_NEW_TOKENS = 400
+MIN_JOB_DESCRIPTION_TOKENS = 256
+TOKEN_SAFETY_MARGIN = 16
+
 device = "cpu"
 if torch.backends.mps.is_available():
     device = "mps"
@@ -45,20 +51,54 @@ class ATSRequest(BaseModel):
     cv_text: str
     job_description: str = ""
 
-@app.post("/cv_tailor")
-def tailor_cv(req: TailorRequest):
-    logger.info("CV tailoring request received")
 
-    if len(req.cv_text) > MAX_CV_TEXT_LENGTH:
-        raise HTTPException(status_code=400, detail="CV text too large")
-    if len(req.job_description) > MAX_JOB_DESCRIPTION_LENGTH:
-        raise HTTPException(status_code=400, detail="Job description too large")
+def _encode(text: str) -> list[int]:
+    return pipe.tokenizer.encode(text, add_special_tokens=False)
 
-    if not pipe:
-        raise HTTPException(status_code=500, detail="Model is not available.")
 
-    start_time = time.time()
-    messages = [
+def _render_prompt(messages: list[dict]) -> str:
+    return pipe.tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
+
+
+def _fit_prompt(build_messages, cv_text: str, job_description: str, max_new_tokens: int) -> str:
+    """Render the chat prompt so it plus max_new_tokens fits the model's context window.
+
+    The job description is trimmed first; a CV that cannot fit even with a
+    minimal job description is rejected rather than silently cut.
+    """
+    budget = MODEL_CONTEXT_TOKENS - max_new_tokens - TOKEN_SAFETY_MARGIN
+
+    prompt = _render_prompt(build_messages(cv_text, job_description))
+    overflow = len(_encode(prompt)) - budget
+    if overflow <= 0:
+        return prompt
+
+    job_tokens = _encode(job_description)
+    keep = len(job_tokens) - overflow
+    if job_tokens and keep >= min(len(job_tokens), MIN_JOB_DESCRIPTION_TOKENS):
+        keep = max(keep - TOKEN_SAFETY_MARGIN, 0)
+        trimmed = pipe.tokenizer.decode(job_tokens[:keep], skip_special_tokens=True)
+        prompt = _render_prompt(build_messages(cv_text, trimmed))
+        if len(_encode(prompt)) <= budget:
+            logger.info("Job description trimmed from %d to %d tokens", len(job_tokens), keep)
+            return prompt
+
+    cv_tokens = len(_encode(cv_text))
+    reclaimable = len(job_tokens) - min(len(job_tokens), MIN_JOB_DESCRIPTION_TOKENS)
+    max_cv_tokens = max(cv_tokens - overflow + reclaimable, 0)
+    raise HTTPException(
+        status_code=400,
+        detail=(
+            f"Your CV is too long for the AI model (about {cv_tokens} tokens). "
+            f"Shorten it to roughly {int(max_cv_tokens * 0.75)} words and try again."
+        ),
+    )
+
+
+def _tailor_messages(cv_text: str, job_description: str) -> list[dict]:
+    return [
         {
             "role": "system",
             "content": (
@@ -73,8 +113,8 @@ def tailor_cv(req: TailorRequest):
         {
             "role": "user",
             "content": (
-                f"### Job Description:\n{req.job_description}\n\n"
-                f"### Original CV:\n{req.cv_text}\n\n"
+                f"### Job Description:\n{job_description}\n\n"
+                f"### Original CV:\n{cv_text}\n\n"
                 "### Task:\n"
                 "1. Analyse the job description for the top 5–8 key skills and keywords.\n"
                 "2. Rewrite the professional summary (2-3 sentences) to directly address the role’s main requirements.\n"
@@ -86,10 +126,37 @@ def tailor_cv(req: TailorRequest):
             )
         }
     ]
-    formatted_prompt = pipe.tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True
+
+
+def _ats_messages(cv_text: str, job_description: str) -> list[dict]:
+    prompt = (
+        "You are an ATS (Applicant Tracking System) expert. Analyse the CV against the job description (if provided) or general best practices.\n\n"
+        f"CV:\n{cv_text}\n\n"
+        f"Job Description:\n{job_description if job_description else 'Not provided – perform a general ATS review.'}\n\n"
+        "Return only a valid JSON object (no markdown, no backticks) with exactly these keys:\n"
+        '- "score": integer from 0 to 100\n'
+        '- "missing_keywords": array of strings\n'
+        '- "formatting_issues": array of strings\n'
+        '- "suggestions": array of strings\n'
+    )
+    return [{"role": "user", "content": prompt}]
+
+
+@app.post("/cv_tailor")
+def tailor_cv(req: TailorRequest):
+    logger.info("CV tailoring request received")
+
+    if len(req.cv_text) > MAX_CV_TEXT_LENGTH:
+        raise HTTPException(status_code=400, detail="CV text too large")
+    if len(req.job_description) > MAX_JOB_DESCRIPTION_LENGTH:
+        raise HTTPException(status_code=400, detail="Job description too large")
+
+    if not pipe:
+        raise HTTPException(status_code=500, detail="Model is not available.")
+
+    start_time = time.time()
+    formatted_prompt = _fit_prompt(
+        _tailor_messages, req.cv_text, req.job_description, TAILOR_MAX_NEW_TOKENS
     )
 
     def clean_output(text: str) -> str:
@@ -97,7 +164,7 @@ def tailor_cv(req: TailorRequest):
          text = re.sub(r"\n```\s*$", "", text)
          return text.strip()
 
-    outputs = pipe(formatted_prompt, return_full_text = False, max_new_tokens=1200, do_sample=True, temperature=0.3, top_p=0.9, repetition_penalty=1.05)
+    outputs = pipe(formatted_prompt, return_full_text = False, max_new_tokens=TAILOR_MAX_NEW_TOKENS, do_sample=True, temperature=0.3, top_p=0.9, repetition_penalty=1.05)
     generated_output = clean_output(outputs[0]['generated_text'].strip())
 
     duration = time.time() - start_time
@@ -114,26 +181,14 @@ def ats_score(req: ATSRequest):
     if not pipe:
         raise HTTPException(status_code=500, detail="Model not available.")
 
-    prompt = (
-        "You are an ATS (Applicant Tracking System) expert. Analyse the CV against the job description (if provided) or general best practices.\n\n"
-        f"CV:\n{req.cv_text}\n\n"
-        f"Job Description:\n{req.job_description if req.job_description else 'Not provided – perform a general ATS review.'}\n\n"
-        "Return only a valid JSON object (no markdown, no backticks) with exactly these keys:\n"
-        '- "score": integer from 0 to 100\n'
-        '- "missing_keywords": array of strings\n'
-        '- "formatting_issues": array of strings\n'
-        '- "suggestions": array of strings\n'
-    )
-
-    messages = [{"role": "user", "content": prompt}]
-    formatted_prompt = pipe.tokenizer.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=True
+    formatted_prompt = _fit_prompt(
+        _ats_messages, req.cv_text, req.job_description, ATS_MAX_NEW_TOKENS
     )
 
     outputs = pipe(
         formatted_prompt,
         return_full_text=False,
-        max_new_tokens=400,
+        max_new_tokens=ATS_MAX_NEW_TOKENS,
         do_sample=True,
         temperature=0.1,
         top_p=0.9,
