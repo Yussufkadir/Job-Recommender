@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session, sessionmaker  # noqa: E402
 
 from app.ingestion.pipeline import as_utc  # noqa: E402
 from app.matching.index import JobIndex  # noqa: E402
-from app.matching.ranker import WEIGHTS, rank_jobs  # noqa: E402
+from app.matching.ranker import LANGUAGE_MATCH_BONUS, LANGUAGE_MISMATCH_PENALTY, WEIGHTS, rank_jobs  # noqa: E402
 from app.models.job_posting import JobPosting  # noqa: E402
 from app.services.recommender_client import RecommenderClient  # noqa: E402
 
@@ -38,8 +38,11 @@ VARIANTS: dict[str, dict[str, float]] = {
     "semantic_only": {"semantic": 1.0},
     "title+keywords": {"title": WEIGHTS["title"], "keywords": WEIGHTS["keywords"]},
     "hybrid_no_semantic": {name: w for name, w in WEIGHTS.items() if name != "semantic"},
+    "hybrid_no_language": dict(WEIGHTS),
     "hybrid": dict(WEIGHTS),
 }
+# Variants ranked with the language-mismatch penalty; the others show single signals as they are.
+LANGUAGE_AWARE_VARIANTS = {"hybrid"}
 
 JUDGMENT_FIELDS = ["query_id", "job_key", "relevance", "title", "company", "location", "link"]
 
@@ -91,6 +94,8 @@ class Runner:
         self.index = JobIndex()
         self.now = snapshot_time(db)
         self._keys: dict[int, str] = {}
+        self.language_penalty = LANGUAGE_MISMATCH_PENALTY
+        self.language_bonus = LANGUAGE_MATCH_BONUS
 
     def _key_for(self, job_id: int) -> str:
         if job_id not in self._keys:
@@ -111,6 +116,8 @@ class Runner:
             weights=weights,
             index=self.index,
             now=self.now,
+            language_penalty=self.language_penalty if variant in LANGUAGE_AWARE_VARIANTS else 0.0,
+            language_bonus=self.language_bonus if variant in LANGUAGE_AWARE_VARIANTS else 0.0,
         )
         available = (
             ("skills" not in weights or result.used_skills)

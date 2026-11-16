@@ -11,8 +11,9 @@ import numpy as np
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.ingestion.normalize import SUPPORTED_COUNTRIES
+from app.ingestion.normalize import SUPPORTED_COUNTRIES, dedupe_key
 from app.ingestion.pipeline import as_utc
+from app.matching.languages import job_languages
 from app.matching.text import tokenize
 from app.models.job_posting import JobPosting
 
@@ -35,6 +36,7 @@ class _Postings:
 class IndexSnapshot:
     ids: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype=np.int64))
     title_tokens: list[frozenset] = field(default_factory=list)
+    languages: list[frozenset] = field(default_factory=list)
     skills: list[Optional[list[str]]] = field(default_factory=list)
     country_masks: dict[str, np.ndarray] = field(default_factory=dict)
     remote: np.ndarray = field(default_factory=lambda: np.zeros(0, dtype=bool))
@@ -99,9 +101,13 @@ def _build(rows) -> IndexSnapshot:
         skills = json.loads(row.skills) if row.skills else None
         snapshot.title_tokens.append(frozenset(title_tokens))
         snapshot.title_bigrams.append(frozenset(zip(title_tokens, title_tokens[1:])))
-        snapshot.dedupe_keys.append(row.dedupe_key)
-        snapshot.rows_by_dedupe_key.setdefault(row.dedupe_key, []).append(i)
+        # Recomputed rather than read from the row, so rows stored under an older merge rule
+        # still merge with copies stored under the current one.
+        key = dedupe_key(row.title, row.company)
+        snapshot.dedupe_keys.append(key)
+        snapshot.rows_by_dedupe_key.setdefault(key, []).append(i)
         snapshot.skills.append(skills)
+        snapshot.languages.append(job_languages(row.title, skills or [], row.description or ""))
 
         bag = Counter()
         for token in title_tokens:
@@ -159,8 +165,9 @@ class JobIndex:
             if signature != self._signature:
                 started = time.monotonic()
                 rows = db.query(
-                    JobPosting.id, JobPosting.title, JobPosting.company, JobPosting.dedupe_key,
+                    JobPosting.id, JobPosting.title, JobPosting.company,
                     JobPosting.countries, JobPosting.remote, JobPosting.seniority, JobPosting.skills, JobPosting.embedding,
+                    JobPosting.description,
                     JobPosting.posted_at, JobPosting.first_seen_at,
                 ).all()
                 self._snapshot = _build(rows)

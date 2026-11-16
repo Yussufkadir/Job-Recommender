@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.ingestion.pipeline import as_utc
 from app.matching.index import IndexSnapshot, JobIndex, job_index
+from app.matching.languages import search_languages
 from app.matching.text import tokenize
 from app.models.job_posting import JobPosting
 from app.services.recommender_client import RecommenderClient
@@ -26,6 +27,12 @@ FRESHNESS_DAYS = 60
 STRONG_TITLE_MATCH = 0.5
 PHRASE_WEIGHT = 0.25
 MAX_OTHER_LOCATIONS = 10
+# Searches that name a programming language: jobs in other languages lose this share of their
+# score (a Go backend job for a Python search), jobs in the same language gain LANGUAGE_MATCH_BONUS,
+# and jobs that name no language are left alone. A bonus measured worse: many good jobs never
+# name their language, and boosting the ones that do pushes those down.
+LANGUAGE_MISMATCH_PENALTY = 0.3
+LANGUAGE_MATCH_BONUS = 0.0
 
 SENIORITY_LEVELS = {"intern": "intern", "junior": "junior", "mid": "mid", "senior": "senior"}
 
@@ -77,6 +84,8 @@ def rank_jobs(
     weights: Optional[dict[str, float]] = None,
     index: Optional[JobIndex] = None,
     now: Optional[float] = None,
+    language_penalty: float = LANGUAGE_MISMATCH_PENALTY,
+    language_bonus: float = LANGUAGE_MATCH_BONUS,
 ) -> RankResult:
     client = client or RecommenderClient()
     weights = WEIGHTS if weights is None else weights
@@ -161,6 +170,13 @@ def rank_jobs(
 
     age_days = (now - snapshot.posted_ts[rows]) / 86400
     final *= 1 - FRESHNESS_PENALTY * np.clip(age_days / FRESHNESS_DAYS, 0, 1)
+
+    wanted_languages = search_languages(query, skills)
+    if wanted_languages and (language_penalty or language_bonus):
+        named = np.array([bool(snapshot.languages[r]) for r in rows])
+        matches = np.array([bool(snapshot.languages[r] & wanted_languages) for r in rows])
+        final[named & ~matches] *= 1 - language_penalty
+        final[matches] *= 1 + language_bonus
 
     result.strong_title_matches = int((signals["title"] >= STRONG_TITLE_MATCH).sum())
 

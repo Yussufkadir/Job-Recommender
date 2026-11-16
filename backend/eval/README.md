@@ -41,6 +41,23 @@ Judge the job against the query's profile, not your own. Be consistent rather th
 perfect: the numbers are for comparing variants, and a consistent judge compares fairly.
 You can also edit the `relevance` column in `judgments.csv` directly.
 
+Keys while labeling: `2`/`1`/`0` grade, `d` full description (from the snapshot, so it
+works after a posting is taken down), `o` open the live posting, `s` skip, `q` quit.
+`--query ID` labels one query at a time; finish a query before evaluating it, since
+unjudged results count as not relevant.
+
+Rules used so far, to keep borderline cases consistent:
+
+- Grade what the job is, from the description, not the title ("Data Analyst" at
+  Perplexity is data science work; "Software Engineer - MongoDB" at Canonical is ops automation).
+- Same role, but a different main language or a close sibling role (data analyst or ML
+  platform engineer for a data scientist query): 1.
+- A different specialty that only uses the same tools (infrastructure for a data query,
+  performance research for a backend query), marketplace ads, or a country outside the
+  query's: 0.
+- Seniority only counts when the query sets a level; filled or expired postings are graded
+  as they were when the snapshot was taken.
+
 ### 3. Metrics
 
 | Metric | Question it answers |
