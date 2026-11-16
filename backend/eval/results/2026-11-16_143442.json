@@ -1,0 +1,65 @@
+{
+  "saved_at": "2026-11-16_143442",
+  "git_commit": "b5e1ac7-dirty",
+  "snapshot_taken": "2026-10-22 12:02 UTC",
+  "queries_judged": 1,
+  "judgments": 23,
+  "variants": {
+    "title_only": {
+      "available": true,
+      "precision_at_10": 0.5,
+      "ndcg_at_10": 0.2857480486958886,
+      "mrr": 1.0,
+      "judged_at_10": 0.5
+    },
+    "keywords_only": {
+      "available": true,
+      "precision_at_10": 0.8,
+      "ndcg_at_10": 0.5512858301074485,
+      "mrr": 0.5,
+      "judged_at_10": 0.8
+    },
+    "skills_only": {
+      "available": false,
+      "precision_at_10": null,
+      "ndcg_at_10": null,
+      "mrr": null,
+      "judged_at_10": null
+    },
+    "semantic_only": {
+      "available": false,
+      "precision_at_10": null,
+      "ndcg_at_10": null,
+      "mrr": null,
+      "judged_at_10": null
+    },
+    "title+keywords": {
+      "available": true,
+      "precision_at_10": 0.4,
+      "ndcg_at_10": 0.20913641529639243,
+      "mrr": 0.5,
+      "judged_at_10": 0.4
+    },
+    "hybrid_no_semantic": {
+      "available": false,
+      "precision_at_10": null,
+      "ndcg_at_10": null,
+      "mrr": null,
+      "judged_at_10": null
+    },
+    "hybrid": {
+      "available": false,
+      "precision_at_10": null,
+      "ndcg_at_10": null,
+      "mrr": null,
+      "judged_at_10": null
+    }
+  },
+  "per_query_ndcg_at_10": {
+    "backend-python": {
+      "title_only": 0.2857480486958886,
+      "keywords_only": 0.5512858301074485,
+      "title+keywords": 0.20913641529639243
+    }
+  }
+}

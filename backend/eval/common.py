@@ -130,7 +130,7 @@ def write_judgment_rows(rows: list[dict]) -> None:
     rows = sorted(rows, key=lambda row: (row["query_id"], row["job_key"]))
     tmp = JUDGMENTS_PATH.with_suffix(".tmp")
     with tmp.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=JUDGMENT_FIELDS)
+        writer = csv.DictWriter(handle, fieldnames=JUDGMENT_FIELDS, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
     tmp.replace(JUDGMENTS_PATH)  

@@ -7,6 +7,7 @@ commit, and every run compares against the most recent saved result.
 import argparse
 import json
 import subprocess
+from collections import Counter
 from datetime import datetime, timezone
 from statistics import mean
 
@@ -47,13 +48,26 @@ def main() -> None:
     args = parser.parse_args()
 
     queries = load_queries()
-    grades = grades_by_query(read_judgment_rows())
+    rows = read_judgment_rows()
+    grades = grades_by_query(rows)
     judged_queries = [query for query in queries if grades.get(query.id)]
     if not judged_queries:
         raise SystemExit("No judgments yet. Label some results first: python -m eval.label")
+    pool_sizes = Counter(row["query_id"] for row in rows)
+    partial = [f"{q.id} ({len(grades[q.id])}/{pool_sizes[q.id]})" for q in judged_queries
+               if len(grades[q.id]) < pool_sizes[q.id]]
+    if partial:
+        print("Partly labeled (unlabeled results count as not relevant, so these scores are too low): "
+              + ", ".join(partial) + "\nFinish them with python -m eval.label --query ID\n")
 
     db = open_snapshot()
     runner = Runner(db)
+    # Without the recommender, the skills and semantic variants (and hybrid, what production
+    # uses) can't be scored; stop rather than print and save a table missing them.
+    if runner.client.embed(["ping"]) is None:
+        raise SystemExit(f"\nThe recommender service isn't reachable at {runner.client.api_url}.\n"
+                         "Start it in another terminal and wait for 'Application startup complete':\n"
+                         "  cd ml_services/recommender_service && uvicorn app:app --port 8001")
     snapshot_date = datetime.fromtimestamp(runner.now, tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     print(f"Snapshot: {SNAPSHOT_PATH.name} (taken {snapshot_date})   "
           f"Queries judged: {len(judged_queries)}/{len(queries)}   "
