@@ -48,7 +48,7 @@ def write_reviews(path: Path, reviews: dict[tuple, dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
     with tmp.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=FIELDS)
+        writer = csv.DictWriter(handle, fieldnames=FIELDS, lineterminator="\n")
         writer.writeheader()
         writer.writerows({key: row[key] for key in FIELDS} for row in reviews.values())
     tmp.replace(path) 

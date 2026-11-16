@@ -205,7 +205,6 @@
 			poolSize = response.stats?.pool_size ?? 0;
 		} catch (err) {
 			console.error(err);
-			// fetch() throws TypeError when the backend can't be reached at all.
 			error =
 				err instanceof Error && !(err instanceof TypeError)
 					? err.message
