@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.ingestion.normalize import SUPPORTED_COUNTRIES, dedupe_key
 from app.ingestion.pipeline import as_utc
 from app.matching.languages import job_languages
+from app.matching.skills import job_skills
 from app.matching.text import tokenize
 from app.models.job_posting import JobPosting
 
@@ -98,7 +99,9 @@ def _build(rows) -> IndexSnapshot:
                 snapshot.country_masks[code][i] = True
 
         title_tokens = tokenize(row.title)
-        skills = json.loads(row.skills) if row.skills else None
+        skills = job_skills(
+            json.loads(row.skills) if row.skills else [], row.title, row.description or "", row.company
+        ) or None
         snapshot.title_tokens.append(frozenset(title_tokens))
         snapshot.title_bigrams.append(frozenset(zip(title_tokens, title_tokens[1:])))
         # Recomputed rather than read from the row, so rows stored under an older merge rule
