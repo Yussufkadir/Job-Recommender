@@ -215,8 +215,22 @@ _MAX_SKILL_CHARS = 40
 _MAX_SKILL_WORDS = 4
 
 
+# The NER was trained on CVs, so job ads' equal-opportunity statements ("regardless of sexual
+# orientation, veteran status..."), benefits and well-known company names come out as skills.
+_NOT_SKILLS = re.compile(
+    r"\b(?:status|orientation|gender|marital|veteran|disability|national origin|religio\w*|ethnicity"
+    r"|genetic information|political affiliation|mental ability|pregnan\w*|insurance|rsus?|401k"
+    r"|self employed)\b"
+)
+_COMPANY_NAMES = {
+    "lyft", "spotify", "fox", "airbnb", "facebook", "meta", "stripe", "google", "microsoft", "linkedin",
+    "yelp", "gmail", "anthropic", "nvidia", "amazon", "apple", "ibm", "uber", "netflix", "openai",
+}
+
+
 def clean_skills(skills: Iterable[str]) -> list[str]:
-    """Drop NER spans that are sentences or markup rather than skill names."""
+    """Drop NER spans that are sentences, markup, hiring-policy terms or company names rather
+    than skill names."""
     cleaned = set()
     for skill in skills:
         skill = html.unescape(skill).strip().lower()
@@ -227,6 +241,8 @@ def clean_skills(skills: Iterable[str]) -> list[str]:
             and len(skill.split()) <= _MAX_SKILL_WORDS
             and re.search(r"[a-z]", skill)
             and skill not in {"amp", "nbsp", "quot"}
+            and skill not in _COMPANY_NAMES
+            and not _NOT_SKILLS.search(skill)
         ):
             cleaned.add(skill)
     return sorted(cleaned)

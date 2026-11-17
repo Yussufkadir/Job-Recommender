@@ -1,4 +1,3 @@
-import json
 import logging
 import time
 from dataclasses import dataclass, field
@@ -33,6 +32,9 @@ MAX_OTHER_LOCATIONS = 10
 # name their language, and boosting the ones that do pushes those down.
 LANGUAGE_MISMATCH_PENALTY = 0.3
 LANGUAGE_MATCH_BONUS = 0.0
+# A job listing one skill that the user has covers 100% of its skills, the same as a job
+# listing eight. Jobs with fewer skills than this get proportionally less skill credit.
+FULL_SKILL_CREDIT_AT = 3
 
 SENIORITY_LEVELS = {"intern": "intern", "junior": "junior", "mid": "mid", "senior": "senior"}
 
@@ -156,7 +158,9 @@ def rank_jobs(
         scored = client.score_batch(skills, jobs_skills)
         if scored and len(scored) == len(rows):
             skill_details = scored
+            counts = np.array([len(snapshot.skills[i] or []) for i in rows], dtype=np.float32)
             signals["skills"] = np.array([item["score"] / 100 for item in scored], dtype=np.float32)
+            signals["skills"] *= np.minimum(1.0, counts / FULL_SKILL_CREDIT_AT)
             available["skills"] = np.array([bool(snapshot.skills[i]) for i in rows])
             result.used_skills = True
 
@@ -225,7 +229,7 @@ def rank_jobs(
             "match_score": int(round(float(final[i]) * 100)),
             "matched_skills": details.get("matched", []),
             "missing_skills": details.get("missing", []),
-            "job_skills": json.loads(job.skills) if job.skills else [],
+            "job_skills": snapshot.skills[rows[i]] or [],
             "score_breakdown": {
                 name: int(round(float(signals[name][i]) * 100))
                 for name in signals if available[name][i]
