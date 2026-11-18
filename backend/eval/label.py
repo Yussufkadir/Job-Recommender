@@ -10,7 +10,8 @@ duplicates removed) into eval/judgments.csv. Then you judge each pooled job once
 Press d to read the full description (kept in the snapshot even after the posting is taken
 down), o to open the live posting. Answers are saved immediately, so you can quit (q) and
 resume any time. Run it again after changing the ranking: only jobs that newly reach a top 10
-need judging. The CSV can also be edited by hand (the relevance column).
+need judging. --production-only skips everything except the production ranking's top 10,
+which is enough to score what users see. The CSV can also be edited by hand (the relevance column).
 """
 import argparse
 import json
@@ -18,7 +19,7 @@ import textwrap
 import webbrowser
 
 from eval.common import (
-    K, VARIANTS, Runner, load_queries, open_snapshot, read_judgment_rows, write_judgment_rows,
+    K, PRODUCTION_VARIANT, VARIANTS, Runner, load_queries, open_snapshot, read_judgment_rows, write_judgment_rows,
 )
 from app.models.job_posting import JobPosting  # noqa: E402
 
@@ -67,11 +68,20 @@ def show_full_description(job: JobPosting) -> None:
     print(f"\n(end of description: {job.title} at {job.company}, {len(text)} characters)")
 
 
-def label(runner: Runner, queries, only: str | None) -> None:
+def label(runner: Runner, queries, only: str | None, production_only: bool = False) -> None:
     rows = read_judgment_rows()
     by_id = {query.id: query for query in queries}
     pending = [row for row in rows if not (row.get("relevance") or "").strip()
                and row["query_id"] in by_id and (only is None or row["query_id"] == only)]
+    if production_only:
+        # Only what users see: the production ranking's top K, in rank order.
+        rank = {}
+        for query in queries:
+            if only is None or query.id == only:
+                run = runner.run(query, PRODUCTION_VARIANT)
+                rank.update({(query.id, key): n for n, key in enumerate(run.job_keys)})
+        pending = sorted((row for row in pending if (row["query_id"], row["job_key"]) in rank),
+                         key=lambda row: (row["query_id"], rank[(row["query_id"], row["job_key"])]))
     if not pending:
         print("Nothing left to judge.")
         return
@@ -118,6 +128,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Label search results for the ranking evaluation.")
     parser.add_argument("--query", help="only judge this query id")
     parser.add_argument("--pool-only", action="store_true", help="update the pool, don't start labeling")
+    parser.add_argument("--production-only", action="store_true",
+                        help=f"only judge results in the top {K} of the production ranking ({PRODUCTION_VARIANT})")
     args = parser.parse_args()
 
     queries = load_queries()
@@ -129,7 +141,7 @@ def main() -> None:
     build_pool(runner, queries)
     if not args.pool_only:
         try:
-            label(runner, queries, args.query)
+            label(runner, queries, args.query, args.production_only)
         except (KeyboardInterrupt, EOFError):
             print("\nStopped. Everything answered so far is saved.")
 
