@@ -43,6 +43,7 @@ VARIANTS: dict[str, dict[str, float]] = {
 }
 # Variants ranked with the language-mismatch penalty; the others show single signals as they are.
 LANGUAGE_AWARE_VARIANTS = {"hybrid"}
+PRODUCTION_VARIANT = "hybrid"  # what the app uses
 
 JUDGMENT_FIELDS = ["query_id", "job_key", "relevance", "title", "company", "location", "link"]
 

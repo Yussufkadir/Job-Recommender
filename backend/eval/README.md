@@ -44,7 +44,9 @@ You can also edit the `relevance` column in `judgments.csv` directly.
 Keys while labeling: `2`/`1`/`0` grade, `d` full description (from the snapshot, so it
 works after a posting is taken down), `o` open the live posting, `s` skip, `q` quit.
 `--query ID` labels one query at a time; finish a query before evaluating it, since
-unjudged results count as not relevant.
+unjudged results count as not relevant. `--production-only` asks only about the production
+ranking's top 10 (in rank order): enough to score what users see, while the other variants'
+judged@10 stays low.
 
 Rules used so far, to keep borderline cases consistent:
 

@@ -12,12 +12,11 @@ from datetime import datetime, timezone
 from statistics import mean
 
 from eval.common import (
-    BACKEND_DIR, K, RESULTS_DIR, SNAPSHOT_PATH, VARIANTS, Runner, grades_by_query, load_queries,
+    BACKEND_DIR, K, PRODUCTION_VARIANT, RESULTS_DIR, SNAPSHOT_PATH, VARIANTS, Runner, grades_by_query, load_queries,
     open_snapshot, read_judgment_rows,
 )
 from eval.metrics import judged_at_k, ndcg_at_k, precision_at_k, reciprocal_rank
 
-PRODUCTION_VARIANT = "hybrid"
 LOW_JUDGED_WARNING = 0.9
 
 
