@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 class AdzunaSource(JobSource):
     RESULTS_PER_PAGE = 50
+    # Supported countries Adzuna covers; it has no Swedish site (its API answers 404 for "se").
+    COUNTRIES = {"pl", "de", "fr", "gb", "us", "nl", "ca", "it"}
 
     def __init__(
         self,
