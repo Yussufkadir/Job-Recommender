@@ -43,7 +43,7 @@ def build_sources() -> list[JobSource]:
 
     if "adzuna" in kinds and AdzunaSource.is_configured():
         pages = int(os.getenv("ADZUNA_PAGES", "4"))
-        sources += [AdzunaSource(country, pages=pages) for country in countries]
+        sources += [AdzunaSource(country, pages=pages) for country in countries if country in AdzunaSource.COUNTRIES]
 
     if "arbeitnow" in kinds:
         sources.append(ArbeitnowSource(pages=int(os.getenv("ARBEITNOW_PAGES", "3"))))

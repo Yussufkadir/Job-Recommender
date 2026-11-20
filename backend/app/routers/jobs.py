@@ -72,7 +72,7 @@ def _top_up_sources(query: str, countries: list[str]) -> list:
 
     sources = []
     for country in due:
-        if AdzunaSource.is_configured():
+        if AdzunaSource.is_configured() and country in AdzunaSource.COUNTRIES:
             sources.append(AdzunaSource(country, pages=1, category=None, what=query))
         if JoobleSource.is_configured():
             sources.append(JoobleSource(query, COUNTRY_NAMES[country], country))
