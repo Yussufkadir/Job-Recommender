@@ -1,0 +1,99 @@
+# Daily job collection into the jobs database (Neon Postgres).
+#
+# Fetches every source, updates the job index, removes jobs that disappeared, then extracts
+# skills and embeddings for new jobs with the recommender service, started inside the runner.
+#
+# Repository secrets (Settings > Secrets and variables > Actions):
+#   JOBS_DATABASE_URL       required. The jobs database only, never the users database.
+#   ADZUNA_APPLICATION_ID   optional. Adzuna (covers Poland); skipped when missing.
+#   ADZUNA_APPLICATION_KEY  optional.
+#   JOOBLE_API_KEY          optional. Jooble; skipped when missing.
+#
+# Logs of a public repository are public: secrets are masked by GitHub, and the collector
+# strips URLs (which carry API keys) from its error messages.
+name: Collect jobs
+
+on:
+  schedule:
+    - cron: "17 5 * * *"  # daily, 05:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: collect-jobs
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      JOBS_DATABASE_URL: ${{ secrets.JOBS_DATABASE_URL }}
+      ADZUNA_APPLICATION_ID: ${{ secrets.ADZUNA_APPLICATION_ID }}
+      ADZUNA_APPLICATION_KEY: ${{ secrets.ADZUNA_APPLICATION_KEY }}
+      JOOBLE_API_KEY: ${{ secrets.JOOBLE_API_KEY }}
+      RECOMMENDER_URL: http://localhost:8001
+      # The app's own scheduler isn't used here; the collector runs once and exits.
+      JOB_INGEST_ENABLED: "false"
+    steps:
+      - name: Check the database secret is set
+        run: |
+          if [ -z "$JOBS_DATABASE_URL" ]; then
+            echo "::error::Add the JOBS_DATABASE_URL repository secret (the Neon connection string)."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            ml_services/recommender_service/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          # CPU-only torch: the default Linux wheel bundles CUDA and is several GB.
+          pip install torch==2.9.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install transformers==4.41.2 -r ml_services/recommender_service/requirements.txt
+          pip install -r backend/requirements.txt
+
+      - name: Cache models
+        uses: actions/cache@v4
+        with:
+          path: |
+            /tmp/model
+            ~/.cache/huggingface
+          key: models-v1
+
+      - name: Start the recommender service
+        working-directory: ml_services/recommender_service
+        run: |
+          nohup uvicorn app:app --port 8001 > /tmp/recommender.log 2>&1 &
+          for i in $(seq 1 180); do
+            if curl -sf -X POST localhost:8001/embed -H 'content-type: application/json' \
+                 -d '{"texts":["ping"]}' > /dev/null; then
+              echo "Recommender ready after $((i * 5))s"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::The recommender service didn't start within 15 minutes."
+          tail -50 /tmp/recommender.log
+          exit 1
+
+      - name: Collect jobs
+        working-directory: backend
+        run: |
+          # The settings require a SECRET_KEY; the collector never signs anything, so a
+          # throwaway one is enough and the app's real key stays out of GitHub.
+          export SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
+          python -m app.ingestion
+
+      - name: Recommender log
+        if: failure()
+        run: tail -100 /tmp/recommender.log || true

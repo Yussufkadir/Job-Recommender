@@ -20,7 +20,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Collect jobs into the job index.")
     parser.add_argument("--only", help="Comma-separated source name prefixes, e.g. 'greenhouse,lever:qonto'")
     parser.add_argument("--no-enrich", action="store_true", help="Skip skill extraction and embeddings")
-    parser.add_argument("--no-prune", action="store_true", help="Keep jobs that weren't seen recently")
+    parser.add_argument("--no-prune", action="store_true",
+                        help="Keep jobs that weren't seen recently (always on with --only)")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -31,7 +32,10 @@ def main() -> None:
         prefixes = tuple(p.strip() for p in args.only.split(",") if p.strip())
         sources = [s for s in sources if s.name.startswith(prefixes)]
 
-    summary = run_ingestion(sources, enrich=not args.no_enrich, prune=not args.no_prune)
+    # Pruning removes jobs not seen recently from every source, so a run over only some
+    # sources would delete the others' jobs.
+    prune = not args.no_prune and not args.only
+    summary = run_ingestion(sources, enrich=not args.no_enrich, prune=prune)
     print(json.dumps(summary, indent=2, default=str))
 
 
